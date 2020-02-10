@@ -50,8 +50,9 @@ function getImages(images) {
 server.listen(5000, function () {
     console.log('Starting server on port 5000');
 });
-
+let socket2;
 io.on('connection', function (socket) {
+    socket2 = socket;
     console.log('Player ' + socket.id + ' has joined the game');
     socket.on('newplayer', function () {
         players[socket.id] = {
@@ -106,6 +107,9 @@ io.on('connection', function (socket) {
         }
 
     });
+    socket.on('players', function (data){
+        socket.emit("players",players);
+    });
 })
 ;
 
@@ -145,6 +149,10 @@ function movePlayers(players) {
 }
 setInterval(function () {
     movePlayers(players);
-    socket.emit("players",players);
+
+        if(socket2) {
+            socket2.emit("players", players)
+        }
+
     gameTime = timeFunctions.updateGameTime(gameTime, 600)
 }, 1000/60);
