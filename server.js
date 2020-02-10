@@ -18,12 +18,13 @@ let mapFunctions = require("./server/map.js");
 let collisionFunctions = require("./server/collision.js");
 let timeFunctions = require("./server/time.js");
 
-let gridSizeX =32;
-let gridSizeY =32;
+let gridSizeX =64;
+let gridSizeY =64;
 //generate Map
 let maps = mapFunctions.generateMap(0,0,320,320,"Forest",gridSizeX,gridSizeY)
 let map = maps.map
 let collisionMap = maps.map
+let treeMap = maps.treeMap
 
 //game time
 let gameTime = 0;
@@ -88,14 +89,68 @@ io.on('connection', function (socket) {
     socket.on('getdata', function (click) {
         let gameData = {
             map: map,
+            treeMap: treeMap,
             gameTime: gameTime,
         };
         socket.emit('data', gameData);
     });
+    socket.on('movement', function (data) {
+
+        let player = players[socket.id] || {};
+        player.data = data;
+        if (player.isDead === false) {
+            if (data.a || data.w || data.d || data.s || data[' ']) {
+                //movePlayer(player, data, speed, jumpAmount, jumpSpeed);
+                if (data[' ']) {
+                    let d = new Date();
+                    let currentTime = Math.round(d.getTime() / 100);
+                    if (players[socket.id].lastPressTime + 5 < currentTime) {
+                        players[socket.id].lastPressTime = currentTime;
+                        if (player.holding[0]) {
+                            if (player.holding[0].type == 'melee') {
+                                player.attacking = true
+                            } else if (player.holding[0].name == 'healthpotion_item') {
+                                let dateNow = Date.now()
+                                if (player.healingDelay < dateNow) {
+                                    if (attackFunctions.heal(players[socket.id], 25)) {
+                                        if (inventoryFunctions.deleteItemInventory(players[socket.id], 'healthpotion_item')) {
+                                            socket.emit('gothealed', 25)
+                                            player.healingDelay = dateNow + 2000
+                                        }
+                                    }
+                                }
+                            } else if (player.holding[0].type == 'light') {
+                                if (player.followLight == null) {
+                                    player.followLight = illuminationFunctions.generatelightSource(player.x, player.y, "Point", player.holding[0].range, player.holding[0].damage, lightSources)
+                                } else {
+                                    //console.log("hello")
+                                    //delete followLight;
+                                    illuminationFunctions.removeLightSource(player.followLight, lightSources);
+                                    player.followLight = null
+                                    //followLight = illuminationFunctions.generatelightSource(player.x, player.y, "Point", player.holding[0].range, player.holding[0].damage, lightSources)
+                                }
+                            }
+                        }
+                    }
+
+                }
+                let currentGrid = mapFunctions.myGrid(player.x, player.y, gridSize)
+                try {
+                    player.followLight.x = currentGrid.x
+                    player.followLight.y = currentGrid.y + gridSize
+                } catch (e) {
+
+                }
+            } else {
+                player.status = 0;
+            }
+        }
+
+    });
 })
 ;
 
-function movePlayer(player, data, speed, jumpAmount, jumpSpeed) {
+function movePlayer(player, data, speed) {
     if (data == null) {
         return
     }
@@ -120,8 +175,16 @@ function movePlayer(player, data, speed, jumpAmount, jumpSpeed) {
         }
     }
 }
-
+function movePlayers(players) {
+    let speed = 5//5
+    for (let player in players) {
+        player = players[player];
+        if (player.isDead == false) {
+            movePlayer(player, player.data, speed);
+        }
+    }
+}
 setInterval(function () {
-
+    movePlayers(players);
     gameTime = timeFunctions.updateGameTime(gameTime, 600)
 }, 1000/60);

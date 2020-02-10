@@ -22,7 +22,7 @@ function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSiz
         if (!collisionMap[i]) collisionMap[i] = [];
         for (let k = startY; k < endY; k += gridSizeY) {
             map[i][k] = {
-                tile: "dirt" + Math.floor(Math.random() * 10).toString() +"_block",
+                tile: "forestTile",//"dirt" + Math.floor(Math.random() * 10).toString() +"_block",
                 item: null,
                 tree: null,
                 plant: null,
@@ -39,6 +39,7 @@ function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSiz
     amountOfTrees = Math.floor(Math.random() * Math.floor((amountOfBlocks / 15))) + 1;
     console.log("generated trees amount :" + amountOfTrees);
 
+    let treeMap = []
     for (let i = 0; i < amountOfTrees; i++) {
         let treeX = gridSizeX * (Math.floor(Math.random() * sizeX / gridSizeX) + startX);
         let treeY = gridSizeY * (Math.floor(Math.random() * sizeY / gridSizeY) + startY);
@@ -52,6 +53,12 @@ function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSiz
             } else {
                 //add Tree
                 map[treeX][treeY].tree = "Pines";
+                let tree = {
+                    name:"Pines",
+                    x:treeX,
+                    y:treeY,
+                }
+                treeMap.push(tree);
                 collisionMap[treeX][treeY].collision = true;
             }
         } catch (e) {
@@ -62,6 +69,7 @@ function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSiz
 
     let maps = {
         map: map,
+        treeMap: treeMap,
         collisonMap: collisionMap
     }
     return maps;
