@@ -12,6 +12,7 @@ app.set('port', 5000);
 const static_dir = 'static';
 app.use(express.static(static_dir));
 
+const imageFolder = './static/images';
 
 let mapFunctions = require("./server/map.js");
 let timeFunctions = require("./server/time.js");
@@ -24,12 +25,26 @@ let collisionMap = maps.map
 //game time
 let gameTime = 0;
 
+let images = {};
+images = getImages(images)
+
+
+
+function getImages(images) {
+    fs.readdir(imageFolder, (err, files) => {
+        files.forEach(folder => {
+            fs.readdir(imageFolder + "/" + folder, (err, files) => {
+                images[folder] = files
+            });
+        });
+    });
+    return images
+}
+
 // Starts the server.
 server.listen(5000, function () {
     console.log('Starting server on port 5000');
 });
-
-
 
 io.on('connection', function (socket) {
     console.log('Player ' + socket.id + ' has joined the game');
@@ -59,13 +74,19 @@ io.on('connection', function (socket) {
             data: null,
         };
         let player = players[socket.id]
+        socket.join('players');
+        console.log("Player joined")
+        socket.emit("joined","success");
+    });
+    socket.on('getimages', function (click) {
+        socket.emit('images', images);
+    });
+    socket.on('getdata', function (click) {
         let gameData = {
             map: map,
             gameTime: gameTime,
         }
-
-            io.sockets.emit('startData', gameData);
-        socket.join('players');
+        socket.emit('Data', gameData);
     });
 })
 ;
