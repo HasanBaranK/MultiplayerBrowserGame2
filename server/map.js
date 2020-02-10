@@ -51,7 +51,7 @@ function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSiz
                 continue;
             } else {
                 //add Tree
-                map[treeX][treeY].tree = "Pine";
+                map[treeX][treeY].tree = "Pines";
                 collisionMap[treeX][treeY].collision = true;
             }
         } catch (e) {

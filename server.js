@@ -17,8 +17,10 @@ const imageFolder = './static/images';
 let mapFunctions = require("./server/map.js");
 let timeFunctions = require("./server/time.js");
 
+let gridSizeX =32;
+let gridSizeY =32;
 //generate Map
-let maps = mapFunctions.generateMap(0,0,320,320,"Forest",32,32)
+let maps = mapFunctions.generateMap(0,0,320,320,"Forest",gridSizeX,gridSizeY)
 let map = maps.map
 let collisionMap = maps.map
 
@@ -91,6 +93,32 @@ io.on('connection', function (socket) {
     });
 })
 ;
+
+function movePlayer(player, data, speed, jumpAmount, jumpSpeed) {
+    if (data == null) {
+        return
+    }
+    let d = new Date();
+    let currentTime = Math.round(d.getTime());
+    if (player.lastMoveTime + 5 < currentTime) {
+        player.lastMoveTime = currentTime;
+        if (data.a) {
+            collisionFunctions.move("left", player, gridSizeX, collisionMap, speed)
+
+        }
+        if (data.w) {
+            collisionFunctions.move("up", player, gridSizeX, collisionMap, speed)
+
+        }
+        if (data.d) {
+            collisionFunctions.move("right", player, gridSizeX, collisionMap, speed)
+
+        }
+        if (data.s) {
+            collisionFunctions.move("down", player, gridSizeX, collisionMap, speed)
+        }
+    }
+}
 
 setInterval(function () {
 
