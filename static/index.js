@@ -1,8 +1,7 @@
 /////////////////////INITIALIZATION CODE//////////////////////////
 let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promises = [];
-let camera = new Camera(0, 0, 0, 0, 5);
+let camera = new Camera(0, 0, 0, 0, 4);
 
-console.log("hey");
 $(document).ready(init);
 /////////////////////GAME FUNCTIONS//////////////////////////////
 
@@ -15,6 +14,7 @@ function init(){
         socket.emit("getimages", {});
         socket.on("data", (res)=>{
             data = res;
+            console.log(data.treeMap);
             socket.emit("newplayer", {});
         });
         socket.on("images", (res)=>{
@@ -40,6 +40,7 @@ function animate(){
 }
 
 function update(){
+    socket.emit("playermovement", {"w":keys["w"], "a":keys["a"], "s":keys["s"],"d":keys["d"]});
     if(keys["a"]){
         camera.move(-camera.speed,0);
     }
@@ -61,12 +62,13 @@ function drawMap(){
         for(blockY in data.map[blockX]){
             let block = data.map[blockX][blockY];
             if(block){
-                ctx.drawImage(images[block.tile], blockX, blockY);
-                if(block.tree){
-                    ctx.drawImage(images[block.tree], blockX, blockY, 32, 32);
-                }
+                ctx.drawImage(images[block.tile], blockX, blockY, 64, 64);
             }
         }
+    }
+    for(tree in data.treeMap){
+        let block = data.treeMap[tree];
+        ctx.drawImage(images[block.name], block.x, block.y);
     }
 }
 
