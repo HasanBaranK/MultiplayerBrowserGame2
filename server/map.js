@@ -1,5 +1,6 @@
 module.exports = {
-    generateMap
+    generateMap,
+    myGrid
 }
 
 function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSizeY) {
@@ -73,4 +74,27 @@ function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSiz
         collisionMap: collisionMap
     }
     return maps;
+}
+function myGrid(x, y, gridSize) {
+    let gridx = x - (x % gridSize)
+    let gridy = y - (y % gridSize)
+
+    if (gridx < 0) {
+        gridx = gridx - gridSize
+    }
+    if (gridy < 0) {
+        gridy = gridy - gridSize
+    }
+
+    if (x < 0 && (0 - gridSize) < x) {
+        gridx = x - (x % gridSize) - gridSize
+    }
+    if (y < 0 && (0 - gridSize) < y) {
+        gridy = y - (y % gridSize) - gridSize
+    }
+    let position = {
+        x: gridx,
+        y: gridy
+    }
+    return position
 }
