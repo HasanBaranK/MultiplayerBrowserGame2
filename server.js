@@ -15,6 +15,7 @@ app.use(express.static(static_dir));
 const imageFolder = './static/images';
 
 let mapFunctions = require("./server/map.js");
+let collisionFunctions = require("./server/collision.js");
 let timeFunctions = require("./server/time.js");
 
 let gridSizeX =32;

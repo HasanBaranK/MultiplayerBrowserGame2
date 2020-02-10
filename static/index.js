@@ -15,7 +15,7 @@ function init(){
         socket.emit("getimages", {});
         socket.on("data", (res)=>{
             data = res;
-            console.log(res);
+            console.log(res.map);
             drawMap();
             socket.emit("newplayer", {});
         });

@@ -1,3 +1,9 @@
+module.exports = {
+
+    move,
+    checkCollision
+}
+
 function move(direction, player, gridSize, collisionMap, speed) {
     if (direction === "left") {
         player.x -= speed;
