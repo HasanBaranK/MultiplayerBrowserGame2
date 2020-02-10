@@ -48,7 +48,7 @@ server.listen(5000, function () {
 
 io.on('connection', function (socket) {
     console.log('Player ' + socket.id + ' has joined the game');
-    socket.on('new player', function () {
+    socket.on('newplayer', function () {
         players[socket.id] = {
             x: 320,
             y: 100,
