@@ -1,9 +1,10 @@
-let cvs, ctx, keys = {}, socket, data = {}, images = [], promises = [];
+/////////////////////INITIALIZATION CODE//////////////////////////
+let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promises = [];
 let camera = new Camera(0, 0, 0, 0, 5);
 
 console.log("hey");
 $(document).ready(init);
-////////////////////////
+/////////////////////GAME FUNCTIONS//////////////////////////////
 
 function init(){
     cvs = $("#canvas")[0];
@@ -14,15 +15,16 @@ function init(){
         socket.emit("getimages", {});
         socket.on("data", (res)=>{
             data = res;
+            console.log(res);
+            drawMap();
             socket.emit("newplayer", {});
         });
         socket.on("images", (res)=>{
-            console.log(res);
-            images = res;
+            imageNames = res;
             socket.emit("getdata");
         });
         socket.on("joined", (res)=>{
-            loadImagesThen(images);
+            loadImagesThenAnimate(imageNames);
             console.log("joined game")
         })
     });
@@ -53,10 +55,24 @@ function update(){
         camera.move(0,-camera.speed);
     }
     ctx.clearRect(camera.x,camera.y,cvs.width,cvs.height);
-    ctx.fillRect(0,0,100,100);
+    //drawMap();
 }
 
-////////////////////////
+function drawMap(){
+    for(blockX in data.map){
+        for(blockY in blockX){
+            if(data.map[blockX]){
+                if(data.map[blockX][blockY]){
+                    let block = data.map[blockX][blockY]
+                    console.log(block);
+                    //ctx.drawImage(images[block.tile], blockX, blockY);
+                }
+            }
+        }
+    }
+}
+
+////////////////HTML EVENTS CODE////////////////////////
 
 // window.addEventListener("resize", () => {
 //     let width = window.innerWidth;
@@ -72,16 +88,17 @@ $(window).keydown((key)=>{
 $(window).keyup((key)=>{
     keys[key.key] = false;
 });
-/////////////////////////
 
-function loadImagesThen(folders){
+//////////////////////UTILS/////////////////////////////////
+
+function loadImagesThenAnimate(folders){
     for(let folder in folders){
         for(let image in folders[folder]){
             promises.push(new Promise((resolve, reject) => {
                 img = new Image();
                 img.onload = function() {
                     resolve('resolved')
-                }
+                };
                 img.src = './images/' + folder + '/' + folders[folder][image];
                 images[folders[folder][image].split('.png')[0]] = img
             }))

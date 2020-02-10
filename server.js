@@ -39,7 +39,6 @@ function getImages(images) {
             });
         });
     });
-    console.log(images);
     return images
 }
 
