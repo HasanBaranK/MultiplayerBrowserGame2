@@ -15,8 +15,6 @@ function init(){
         socket.emit("getimages", {});
         socket.on("data", (res)=>{
             data = res;
-            console.log(res.map);
-            drawMap();
             socket.emit("newplayer", {});
         });
         socket.on("images", (res)=>{
@@ -55,17 +53,17 @@ function update(){
         camera.move(0,-camera.speed);
     }
     ctx.clearRect(camera.x,camera.y,cvs.width,cvs.height);
-    //drawMap();
+    drawMap();
 }
 
 function drawMap(){
     for(blockX in data.map){
-        for(blockY in blockX){
-            if(data.map[blockX]){
-                if(data.map[blockX][blockY]){
-                    let block = data.map[blockX][blockY]
-                    console.log(block);
-                    //ctx.drawImage(images[block.tile], blockX, blockY);
+        for(blockY in data.map[blockX]){
+            let block = data.map[blockX][blockY];
+            if(block){
+                ctx.drawImage(images[block.tile], blockX, blockY);
+                if(block.tree){
+                    ctx.drawImage(images[block.tree], blockX, blockY, 32, 32);
                 }
             }
         }

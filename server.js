@@ -89,7 +89,7 @@ io.on('connection', function (socket) {
         let gameData = {
             map: map,
             gameTime: gameTime,
-        }
+        };
         socket.emit('data', gameData);
     });
 })
