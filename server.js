@@ -75,7 +75,7 @@ io.on('connection', function (socket) {
         };
         let player = players[socket.id]
         socket.join('players');
-        console.log("Player joined")
+        console.log("Player joined");
         socket.emit("joined","success");
     });
     socket.on('getimages', function (click) {
@@ -86,7 +86,7 @@ io.on('connection', function (socket) {
             map: map,
             gameTime: gameTime,
         }
-        socket.emit('Data', gameData);
+        socket.emit('data', gameData);
     });
 })
 ;
