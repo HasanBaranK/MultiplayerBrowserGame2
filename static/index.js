@@ -1,4 +1,4 @@
-let cvs, ctx, keys = {}, socket, data = {}, images = {};
+let cvs, ctx, keys = {}, socket, data = {}, images = [], promises = [];
 let camera = new Camera(0, 0, 0, 0, 5);
 
 console.log("hey");
@@ -14,16 +14,14 @@ function init(){
         socket.emit("getimages", {});
         socket.on("data", (res)=>{
             data = res;
-            console.log(data);
             socket.emit("newplayer", {});
         });
         socket.on("images", (res)=>{
+            console.log(res);
             images = res;
-            console.log(images)
             socket.emit("getdata");
         });
         socket.on("joined", (res)=>{
-            console.log(res);
             loadImagesThen(images);
             console.log("joined game")
         })

@@ -33,11 +33,13 @@ images = getImages(images)
 function getImages(images) {
     fs.readdir(imageFolder, (err, files) => {
         files.forEach(folder => {
+            console.log(folder);
             fs.readdir(imageFolder + "/" + folder, (err, files) => {
                 images[folder] = files
             });
         });
     });
+    console.log(images);
     return images
 }
 
