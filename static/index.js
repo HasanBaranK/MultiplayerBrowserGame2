@@ -1,5 +1,5 @@
 /////////////////////INITIALIZATION CODE//////////////////////////
-let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promises = [], players = {}, me = {};
+let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promises = [], players = {}, me = {}, currentCoords = {};
 let camera = new Camera(0, 0, 0, 0, 4);
 
 $(document).ready(init);
@@ -9,12 +9,12 @@ function init(){
     cvs = $("#canvas")[0];
     ctx = cvs.getContext("2d");
     configure();
+
     socket = io.connect('http://localhost:5000');
     socket.on("connect", ()=>{
         socket.emit("getimages", {});
         socket.on("data", (res)=>{
             data = res;
-            console.log(data.treeMap);
             socket.emit("newplayer", {});
         });
         socket.on("images", (res)=>{
@@ -29,7 +29,6 @@ function init(){
             players = res;
 
             me = players[socket.id];
-            console.log(me)
         });
     });
 }
@@ -38,6 +37,9 @@ function configure(){
     cvs.width = window.innerWidth;
     cvs.height = window.innerHeight;
     cvs.style.border = 'solid black 1px';
+
+    currentCoords.x = cvs.width/2;
+    currentCoords.y = cvs.height/2;
 }
 
 function animate(){
@@ -47,18 +49,25 @@ function animate(){
 
 function update(){
     socket.emit("movement", {"w":keys["w"], "a":keys["a"], "s":keys["s"],"d":keys["d"]});
-    if(keys["a"]){
-        camera.move(-camera.speed,0);
+    if(me.x !== currentCoords.x || me.y !== currentCoords.y){
+        let xDifference = (currentCoords.x - me.x);
+        let yDifference = (currentCoords.y - me.y);
+        camera.move(-xDifference, -yDifference);
+        currentCoords.x = me.x;
+        currentCoords.y = me.y;
     }
-    if(keys["d"]){
-        camera.move(camera.speed,0);
-    }
-    if(keys["s"]){
-        camera.move(0,camera.speed);
-    }
-    if(keys["w"]){
-        camera.move(0,-camera.speed);
-    }
+    // if(keys["a"]){
+    //     camera.move(-camera.speed,0);
+    // }
+    // if(keys["d"]){
+    //     camera.move(camera.speed,0);
+    // }
+    // if(keys["s"]){
+    //     camera.move(0,camera.speed);
+    // }
+    // if(keys["w"]){
+    //     camera.move(0,-camera.speed);
+    // }
     ctx.clearRect(camera.x,camera.y,cvs.width,cvs.height);
     drawMap();
     ctx.fillRect(me.x - 16, me.y - 16, 32, 32);
