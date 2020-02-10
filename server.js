@@ -18,7 +18,7 @@ let mapFunctions = require("./server/map.js");
 let timeFunctions = require("./server/time.js");
 
 //generate Map
-let maps = mapFunctions.generateMap(0,0,1000,1000,"Forest",10,10)
+let maps = mapFunctions.generateMap(0,0,320,320,"Forest",32,32)
 let map = maps.map
 let collisionMap = maps.map
 
