@@ -1,5 +1,5 @@
 /////////////////////INITIALIZATION CODE//////////////////////////
-let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promises = [];
+let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promises = [], players = {}, me = {};
 let camera = new Camera(0, 0, 0, 0, 4);
 
 $(document).ready(init);
@@ -23,8 +23,12 @@ function init(){
         });
         socket.on("joined", (res)=>{
             loadImagesThenAnimate(imageNames);
-            console.log("joined game")
-        })
+            console.log("joined game");
+        });
+        socket.on("players", (res)=>{
+            players = res;
+            me = players[socket.id];
+        });
     });
 }
 
@@ -55,6 +59,7 @@ function update(){
     }
     ctx.clearRect(camera.x,camera.y,cvs.width,cvs.height);
     drawMap();
+    ctx.fillRect(me.x - 16, me.y - 16, 32, 32);
 }
 
 function drawMap(){
