@@ -22,7 +22,7 @@ function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSiz
         if (!collisionMap[i]) collisionMap[i] = [];
         for (let k = startY; k < endY; k += gridSizeY) {
             map[i][k] = {
-                tile: "forestTile",//"dirt" + Math.floor(Math.random() * 10).toString() +"_block",
+                tile: "dirt" + Math.floor(Math.random() * 10).toString() +"_block",
                 item: null,
                 tree: null,
                 plant: null,
@@ -70,7 +70,7 @@ function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSiz
     let maps = {
         map: map,
         treeMap: treeMap,
-        collisonMap: collisionMap
+        collisionMap: collisionMap
     }
     return maps;
 }

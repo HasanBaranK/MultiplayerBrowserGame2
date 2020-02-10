@@ -18,12 +18,12 @@ let mapFunctions = require("./server/map.js");
 let collisionFunctions = require("./server/collision.js");
 let timeFunctions = require("./server/time.js");
 
-let gridSizeX =64;
-let gridSizeY =64;
+let gridSizeX =32;
+let gridSizeY =32;
 //generate Map
 let maps = mapFunctions.generateMap(0,0,320,320,"Forest",gridSizeX,gridSizeY)
 let map = maps.map
-let collisionMap = maps.map
+let collisionMap = maps.collisionMap
 let treeMap = maps.treeMap
 
 //game time
