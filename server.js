@@ -30,7 +30,6 @@ let images = {};
 images = getImages(images)
 
 
-
 function getImages(images) {
     fs.readdir(imageFolder, (err, files) => {
         files.forEach(folder => {

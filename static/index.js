@@ -19,6 +19,7 @@ function init(){
         });
         socket.on("images", (res)=>{
             images = res;
+            console.log(images)
             socket.emit("getdata");
         });
         socket.on("joined", (res)=>{
