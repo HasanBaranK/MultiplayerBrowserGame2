@@ -24,6 +24,7 @@ let collisionMap = maps.map
 
 //game time
 let gameTime = 0;
+var players = {};
 
 let images = {};
 images = getImages(images)
