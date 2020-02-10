@@ -76,6 +76,10 @@ io.on('connection', function (socket) {
             xp: 0,
             xpToLevel: 1000,
             level: 1,
+            healingDelay: 0,
+            lastPressTime: 0,
+            lastJumpTime: 0,
+            lastMoveTime: 0,
             followLight: null,
             data: null,
         };
@@ -101,6 +105,7 @@ io.on('connection', function (socket) {
         player.data = data;
         if (player.isDead === false) {
             if (data.a || data.w || data.d || data.s || data[' ']) {
+
             } else {
                 player.status = 0;
             }
@@ -123,7 +128,6 @@ function movePlayer(player, data, speed) {
         player.lastMoveTime = currentTime;
         if (data.a) {
             collisionFunctions.move("left", player, gridSizeX, collisionMap, speed)
-
         }
         if (data.w) {
             collisionFunctions.move("up", player, gridSizeX, collisionMap, speed)
@@ -139,6 +143,7 @@ function movePlayer(player, data, speed) {
     }
 }
 function movePlayers(players) {
+
     let speed = 5//5
     for (let player in players) {
         player = players[player];

@@ -27,7 +27,9 @@ function init(){
         });
         socket.on("players", (res)=>{
             players = res;
+
             me = players[socket.id];
+            console.log(me)
         });
     });
 }
@@ -44,7 +46,7 @@ function animate(){
 }
 
 function update(){
-    socket.emit("playermovement", {"w":keys["w"], "a":keys["a"], "s":keys["s"],"d":keys["d"]});
+    socket.emit("movement", {"w":keys["w"], "a":keys["a"], "s":keys["s"],"d":keys["d"]});
     if(keys["a"]){
         camera.move(-camera.speed,0);
     }

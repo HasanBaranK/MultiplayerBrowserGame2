@@ -38,7 +38,7 @@ function move(direction, player, gridSize, collisionMap, speed) {
         }
     }
 }
-function checkCollision() {
+function checkCollision(player, sizex, sizey, gridSize, collisionMap) {
     let xcoordinate = player.x + sizex;
     let ycoordinate = player.y + sizey;
 
