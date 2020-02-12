@@ -90,24 +90,20 @@ function update() {
     drawPlayer();
     drawTreeMap();
     drawPlayerCollision()
-    drawMapCollision2(data.collisionMap)
+    drawMapCollision(data.collisionMap)
 }
 setInterval(function(){ doTheMovement(); }, 20);
+
 function doTheMovement(){
     let locationChanged = false;
     let quadTree = [];
-    //let d = new Date();
     let step = 8;
-   // let currentTime = Math.round(d.getTime());
-    // if(!lastMoveTime) {lastMoveTime = currentTime};
-    // if (lastMoveTime + 14 < currentTime) {
-    //     lastMoveTime = currentTime;
         if (keys["a"]) {
-            if (move2(0, data.collisionMap, quadTree,2)) {
+            if (move(0, data.collisionMap, quadTree,2)) {
                 locationChanged = true;
             }else {
                 for (let i = 0; i < step; i++) {
-                    if (move(0, data.collisionMap, quadTree)) {
+                    if (move(0, data.collisionMap, quadTree,0.25)) {
                         locationChanged = true;
                     }
                 }
@@ -115,11 +111,11 @@ function doTheMovement(){
 
         }
         if (keys["d"]) {
-            if (move2(1, data.collisionMap, quadTree,2)) {
+            if (move(1, data.collisionMap, quadTree,2)) {
                 locationChanged = true;
             }else {
                 for (let i = 0; i < step; i++) {
-                    if (move(1, data.collisionMap, quadTree)) {
+                    if (move(1, data.collisionMap, quadTree,0.25)) {
                         locationChanged = true;
                     }
                 }
@@ -127,30 +123,28 @@ function doTheMovement(){
 
         }
         if (keys["s"]) {
-            if (move2(2, data.collisionMap, quadTree,2)) {
+            if (move(2, data.collisionMap, quadTree,2)) {
                 locationChanged = true;
             }else {
                 for (let i = 0; i < step; i++) {
-                    if (move(2, data.collisionMap, quadTree)) {
+                    if (move(2, data.collisionMap, quadTree,0.25)) {
                         locationChanged = true;
                     }
                 }
             }
         }
         if (keys["w"]) {
-            if (move2(3, data.collisionMap, quadTree,2)) {
+            if (move(3, data.collisionMap, quadTree,2)) {
                 locationChanged = true;
             }else {
                 for (let i = 0; i < step; i++) {
-                    if (move(3, data.collisionMap, quadTree)) {
+                    if (move(3, data.collisionMap, quadTree,0.25)) {
                         locationChanged = true;
                     }
                 }
             }
         }
-    // }else {
-    //     console.log("does not let")
-    // }
+
     if (locationChanged) {
         socket.emit("movement", {"w": keys["w"], "a": keys["a"], "s": keys["s"], "d": keys["d"], "x": me.x, "y": me.y});
     }
@@ -184,9 +178,6 @@ function drawPlayer(){
     else{
         animationChecker("idle");
     }
-        //doTheMovement();
-
-
 }
 
 function animationChecker(stateName){
@@ -229,20 +220,6 @@ function drawTreeMap(){
     }
 }
 
-function drawMapCollision(map) {
-    ctx.save()
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-    for (let block in map) {
-        for (let insideBlock in map[block]) {
-            if (map[block][insideBlock]) {
-                console.log(map[block][insideBlock])
-                ctx.fillRect(block - 48, insideBlock - 48, 32, 32);
-            }
-        }
-
-    }
-    ctx.restore()
-}
 function drawPlayerCollision() {
     let player = cloneMe(me);
     let offset = {
@@ -262,7 +239,7 @@ function drawPlayerCollision() {
     //ctx.fillRect(me.x, me.y, me.width, me.height);
     ctx.restore()
 }
-function drawMapCollision2(map) {
+function drawMapCollision(map) {
     ctx.save()
     ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
     for (let i = 0; i < map.length; i++) {
@@ -363,60 +340,7 @@ function editorConfig(){
 
 ////////////////////COLLISION///////////////////////////////
 
-function move(direction, collisionMap, quadTree) {
-    let player = cloneMe(me);
-    let offset = {
-        x:10,
-        y:17,
-        width:14,
-        height:14,
-    }
-    player.x += offset.x
-    player.y += offset.y
-    player.width = offset.width
-    player.height = offset.height
-    let detail = 0.25;
-    if (direction === 0) {
-        for (let i = 0; i < collisionMap.length; i++) {
-
-            player.x -= detail;
-            if (checkCollision(player, collisionMap[i])) {
-                return false;
-            }
-        }
-
-        me.x -= detail;
-    } else if (direction === 1) {
-        for (let i = 0; i < collisionMap.length; i++) {
-
-            player.x += detail;
-            if (checkCollision(player, collisionMap[i])) {
-                return false;
-            }
-        }
-        me.x += detail;
-    } else if (direction === 2) {
-        for (let i = 0; i < collisionMap.length; i++) {
-
-            player.y += detail;
-            if (checkCollision(player, collisionMap[i])) {
-                return false;
-            }
-        }
-        me.y += detail;
-    } else if (direction === 3) {
-        for (let i = 0; i < collisionMap.length; i++) {
-
-            player.y -= detail;
-            if (checkCollision(player, collisionMap[i])) {
-                return false;
-            }
-        }
-        me.y -= detail;
-    }
-    return true;
-}
-function move2(direction, collisionMap, quadTree,speed) {
+function move(direction, collisionMap, quadTree,speed) {
     let player = cloneMe(me);
     let offset = {
         x:10,
