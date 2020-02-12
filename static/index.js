@@ -21,6 +21,7 @@ function init(){
         socket.emit("getimages", {});
         socket.on("data", (res) => {
             data = res;
+            console.log(data)
             socket.emit("newplayer", {});
         });
         socket.on("images", (res) => {
@@ -348,10 +349,11 @@ function updateEditor(){
                     let r = rectangles[rectangle];
                     let xOffset = r.x - (camera.x + cvs.width / 2);
                     let yOffset = r.y - (camera.y + cvs.height / 2);
-                    message.rectangles.push({x:xOffset, y:yOffset, w:r.w, h:r.h})
+                    message.rectangles.push({x:xOffset, y:yOffset, width:r.w, height:r.h})
                 }
                 console.log(message);
-                alert(JSON.stringify(message))
+                //alert(JSON.stringify(message))
+                socket.emit("updatecollision",message);
             }
         }
     }

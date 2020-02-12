@@ -64,21 +64,21 @@ function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSiz
                 treeMap.push(tree);
 
                 //if (!collisionMap[treeX]) collisionMap[treeX] = [];
-                /*if(rectangles[treeName]){
+                if(rectangles[treeName]){
                     rectangles[treeName].forEach(
-                        element => collisionMap.push(element)
+
+                        element => {
+                            let collisionObject = {
+                                x: element.x + treeX,
+                                y: treeY + element.y,
+                                width: element.width,
+                                height: element.height,
+                            }
+                            collisionMap.push(collisionObject)
+                        }
                     )
-                }*/
-                if(rectangles.name===treeName){
-                    let rect = rectangles.rectangles[0];
-                    let collisionObject = {
-                        x:treeX + rect.x,
-                        y:treeY + rect.y,
-                        width:rect.width,
-                        height:rect.height,
-                    }
-                    collisionMap.push(collisionObject)
                 }
+
                 /*let collisionObject = {
                     x:treeX,
                     y:treeY,

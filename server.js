@@ -95,6 +95,13 @@ io.on('connection', function (socket) {
     socket.on('getimages', function (click) {
         socket.emit('images', images);
     });
+    socket.on('updatecollision', function (data) {
+        let rawdata = fs.readFileSync("server/collisions.json");
+        let rectangles = JSON.parse(rawdata);
+        rectangles[data.name] = data.rectangles;
+        let  result= JSON.stringify(rectangles);
+        fs.writeFileSync('server/collisions.json', result);
+    });
     socket.on('getdata', function (click) {
         let gameData = {
             map: map,
