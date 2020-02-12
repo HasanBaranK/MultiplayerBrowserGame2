@@ -42,16 +42,17 @@ function init(){
 
 function setUpAnimations(){
     animator.player = new Player();
-    animator.player.addAnimation("runUP", images["run"], 0, 7, 0, 32, 32, 32, 32, 100);
-    animator.player.addAnimation("runUPRIGHT", images["run"], 0, 7, 1, 32, 32, 32, 32, 100);
-    animator.player.addAnimation("runRIGHT", images["run"], 0, 7, 2, 32, 32, 32, 32, 100);
-    animator.player.addAnimation("runDOWNRIGHT", images["run"], 0, 7, 3, 32, 32, 32, 32, 100);
-    animator.player.addAnimation("runDOWN", images["run"], 0, 7, 4, 32, 32, 32, 32, 100);
-    animator.player.addAnimation("runDOWNLEFT", images["run"], 0, 7, 5, 32, 32, 32, 32, 100);
-    animator.player.addAnimation("runLEFT", images["run"], 0, 7, 6, 32, 32, 32, 32, 100);
-    animator.player.addAnimation("runUPLEFT", images["run"], 0, 7, 7, 32, 32, 32, 32, 100);
+    let speed = 80;
+    animator.player.addAnimation("runUP", images["run"], 0, 7, 0, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runUPRIGHT", images["run"], 0, 7, 1, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runRIGHT", images["run"], 0, 7, 2, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runDOWNRIGHT", images["run"], 0, 7, 3, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runDOWN", images["run"], 0, 7, 4, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runDOWNLEFT", images["run"], 0, 7, 5, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runLEFT", images["run"], 0, 7, 6, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runUPLEFT", images["run"], 0, 7, 7, 32, 32, 32, 32, speed);
 
-    animator.player.addAnimation("idle", images["idle"], 0, 7, 4, 32, 32, 32, 32, 100);
+    animator.player.addAnimation("idle", images["idle"], 0, 7, 4, 32, 32, 32, 32, 120);
 }
 
 function configure() {
