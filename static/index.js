@@ -53,7 +53,7 @@ function animate() {
     update();
     requestId = requestAnimationFrame(animate);
 }
-
+let lastMoveTime;
 function update() {
     //socket.emit("movement", {"w": keys["w"], "a": keys["a"], "s": keys["s"], "d": keys["d"]});
     if (me.x !== currentCoords.x || me.y !== currentCoords.y) {
@@ -67,8 +67,9 @@ function update() {
     let quadTree = [];
     let d = new Date();
     let currentTime = Math.round(d.getTime());
-    if (me.lastMoveTime + 5 < currentTime) {
-        me.lastMoveTime = currentTime;
+    if(!lastMoveTime) {lastMoveTime = currentTime};
+    if (lastMoveTime + 5 < currentTime) {
+        lastMoveTime = currentTime;
         if (keys["a"]) {
             if (move(0, data.collisionMap, quadTree)) {
                 locationChanged = true;
