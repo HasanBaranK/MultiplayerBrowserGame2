@@ -21,7 +21,6 @@ function init(){
         socket.emit("getimages", {});
         socket.on("data", (res) => {
             data = res;
-            console.log(data)
             socket.emit("newplayer", {});
         });
         socket.on("images", (res) => {
@@ -90,19 +89,19 @@ function update() {
     drawMap();
     drawPlayer();
     drawTreeMap();
-    //drawPlayerCollision()
+    drawPlayerCollision()
     drawMapCollision2(data.collisionMap)
 }
-
+setInterval(function(){ doTheMovement(); }, 20);
 function doTheMovement(){
     let locationChanged = false;
     let quadTree = [];
-    let d = new Date();
+    //let d = new Date();
     let step = 8;
-    let currentTime = Math.round(d.getTime());
-    if(!lastMoveTime) {lastMoveTime = currentTime};
-    if (lastMoveTime < currentTime) {
-        lastMoveTime = currentTime;
+   // let currentTime = Math.round(d.getTime());
+    // if(!lastMoveTime) {lastMoveTime = currentTime};
+    // if (lastMoveTime + 14 < currentTime) {
+    //     lastMoveTime = currentTime;
         if (keys["a"]) {
             if (move2(0, data.collisionMap, quadTree,2)) {
                 locationChanged = true;
@@ -149,9 +148,9 @@ function doTheMovement(){
                 }
             }
         }
-    }else {
-        console.log("does not let")
-    }
+    // }else {
+    //     console.log("does not let")
+    // }
     if (locationChanged) {
         socket.emit("movement", {"w": keys["w"], "a": keys["a"], "s": keys["s"], "d": keys["d"], "x": me.x, "y": me.y});
     }
@@ -185,7 +184,7 @@ function drawPlayer(){
     else{
         animationChecker("idle");
     }
-        doTheMovement();
+        //doTheMovement();
 
 
 }
@@ -225,7 +224,6 @@ function drawTreeMap(){
         if ((block.name).includes("bush")) {
             ctx.drawImage(images[block.name], block.x, block.y, 32, 32);
         } else {
-            console.log(block.name)
             ctx.drawImage(images[block.name], block.x, block.y);
         }
     }
