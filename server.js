@@ -20,8 +20,12 @@ let timeFunctions = require("./server/time.js");
 
 let gridSizeX =32;
 let gridSizeY =32;
+//get collisions
+let rawdata = fs.readFileSync("server/collisions.json");
+let rectangles = JSON.parse(rawdata);
+
 //generate Map
-let maps = mapFunctions.generateMap(0,0,320,320,"Forest",gridSizeX,gridSizeY)
+let maps = mapFunctions.generateMap(0,0,640,640,"Forest",gridSizeX,gridSizeY,rectangles)
 let map = maps.map
 let collisionMap = maps.collisionMap
 let treeMap = maps.treeMap
@@ -63,8 +67,8 @@ io.on('connection', function (socket) {
             health: 100,
             maximumEnergy: 100,
             energy: 100,
-            sizex: 32,
-            sizey: 32,
+            width: 32,
+            height: 32,
             isDead: false,
             isMob: false,
             inventory: [],
@@ -96,6 +100,7 @@ io.on('connection', function (socket) {
             map: map,
             treeMap: treeMap,
             gameTime: gameTime,
+            collisionMap:collisionMap
         };
         socket.emit('data', gameData);
     });
@@ -122,11 +127,11 @@ function movePlayer(player, data, speed) {
     if (data == null) {
         return
     }
-    let d = new Date();
-    let currentTime = Math.round(d.getTime());
-    if (player.lastMoveTime + 5 < currentTime) {
-        player.lastMoveTime = currentTime;
-        if (data.a) {
+    //let d = new Date();
+    //let currentTime = Math.round(d.getTime());
+    //if (player.lastMoveTime + 5 < currentTime) {
+    //    player.lastMoveTime = currentTime;
+        /*if (data.a) {
             collisionFunctions.move("left", player, gridSizeX, collisionMap, speed)
         }
         if (data.w) {
@@ -139,12 +144,18 @@ function movePlayer(player, data, speed) {
         }
         if (data.s) {
             collisionFunctions.move("down", player, gridSizeX, collisionMap, speed)
+        }*/
+        if(data.x){
+            player.x = data.x;
         }
-    }
+        if(data.y){
+            player.y = data.y;
+        }
+    //}
 }
 function movePlayers(players) {
 
-    let speed = 5//5
+    let speed = 0.45//5
     for (let player in players) {
         player = players[player];
         if (player.isDead == false) {

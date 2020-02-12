@@ -1,9 +1,11 @@
 /////////////////////INITIALIZATION CODE//////////////////////////
-let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promises = [], players = {}, me = {}, currentCoords = {};
+let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promises = [], players = {}, me = {},
+    currentCoords = {};
 let camera = new Camera(0, 0, 0, 0, 4);
 let requestId;
 
 $(document).ready(init);
+
 /////////////////////GAME FUNCTIONS//////////////////////////////
 
 function init(){
@@ -15,21 +17,21 @@ function init(){
     configure();
 
     socket = io.connect('http://localhost:5000');
-    socket.on("connect", ()=>{
+    socket.on("connect", () => {
         socket.emit("getimages", {});
-        socket.on("data", (res)=>{
+        socket.on("data", (res) => {
             data = res;
             socket.emit("newplayer", {});
         });
-        socket.on("images", (res)=>{
+        socket.on("images", (res) => {
             imageNames = res;
             socket.emit("getdata");
         });
-        socket.on("joined", (res)=>{
+        socket.on("joined", (res) => {
             loadImagesThenAnimate(imageNames);
             console.log("joined game");
         });
-        socket.on("players", (res)=>{
+        socket.on("players", (res) => {
             players = res;
 
             me = players[socket.id];
@@ -37,47 +39,112 @@ function init(){
     });
 }
 
-function configure(){
+function configure() {
     cvs.width = window.innerWidth;
     cvs.height = window.innerHeight;
     cvs.style.border = 'solid black 1px';
 
-    currentCoords.x = cvs.width/2;
-    currentCoords.y = cvs.height/2;
+    currentCoords.x = cvs.width / 2 - 16;
+    currentCoords.y = cvs.height / 2 - 16;
 }
 
-function animate(){
+function animate() {
     update();
     requestId = requestAnimationFrame(animate);
 }
 
-function update(){
-    socket.emit("movement", {"w":keys["w"], "a":keys["a"], "s":keys["s"],"d":keys["d"]});
-    if(me.x !== currentCoords.x || me.y !== currentCoords.y){
+function update() {
+    //socket.emit("movement", {"w": keys["w"], "a": keys["a"], "s": keys["s"], "d": keys["d"]});
+    if (me.x !== currentCoords.x || me.y !== currentCoords.y) {
         let xDifference = (currentCoords.x - me.x);
         let yDifference = (currentCoords.y - me.y);
         camera.move(-xDifference, -yDifference);
         currentCoords.x = me.x;
         currentCoords.y = me.y;
     }
-    ctx.clearRect(camera.x,camera.y,cvs.width,cvs.height);
+    let locationChanged = false;
+    let quadTree = [];
+    let d = new Date();
+    let currentTime = Math.round(d.getTime());
+    if (me.lastMoveTime + 5 < currentTime) {
+        me.lastMoveTime = currentTime;
+        if (keys["a"]) {
+            if (move(0, data.collisionMap, quadTree)) {
+                locationChanged = true;
+            }
+
+        }
+        if (keys["d"]) {
+            if (move(1, data.collisionMap, quadTree)) {
+                locationChanged = true;
+            }
+        }
+        if (keys["s"]) {
+            if (move(2, data.collisionMap, quadTree)) {
+                locationChanged = true;
+            }
+        }
+        if (keys["w"]) {
+            if (move(3, data.collisionMap, quadTree)) {
+                locationChanged = true;
+            }
+        }
+    }
+    if (locationChanged) {
+        socket.emit("movement", {"w": keys["w"], "a": keys["a"], "s": keys["s"], "d": keys["d"], "x": me.x, "y": me.y});
+    }
+    ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
     drawMap();
-    ctx.fillRect(me.x - 16, me.y - 16, 32, 32);
+    //drawMapCollision2(data.collisionMap)
 }
 
-function drawMap(){
-    for(let blockX in data.map){
-        for(let blockY in data.map[blockX]){
+function drawMap() {
+    for (blockX in data.map) {
+        for (blockY in data.map[blockX]) {
             let block = data.map[blockX][blockY];
-            if(block){
+            if (block) {
                 ctx.drawImage(images[block.tile], blockX, blockY, 64, 64);
             }
         }
     }
-    for(tree in data.treeMap){
+    ctx.fillRect(me.x, me.y , 32, 32);
+    ctx.fillStyle = 'red';
+    ctx.fillRect(camera.x + cvs.width / 2 - 8, camera.y + cvs.height / 2 - 8 , 16, 16);
+    ctx.fillStyle = 'black';
+    for (tree in data.treeMap) {
         let block = data.treeMap[tree];
-        ctx.drawImage(images[block.name], block.x, block.y);
+        if ((block.name).includes("rock")) {
+            ctx.drawImage(images[block.name], block.x, block.y, 32, 32);
+        } else {
+            ctx.drawImage(images[block.name], block.x, block.y);
+        }
     }
+}
+
+function drawMapCollision(map) {
+    ctx.save()
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    for (let block in map) {
+        for (let insideBlock in map[block]) {
+            if (map[block][insideBlock]) {
+                console.log(map[block][insideBlock])
+                ctx.fillRect(block - 48, insideBlock - 48, 32, 32);
+            }
+        }
+
+    }
+    ctx.restore()
+}
+
+function drawMapCollision2(map) {
+    ctx.save()
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    for (let i = 0; i < map.length; i++) {
+
+        ctx.fillRect(map[i].x, map[i].y, map[i].width, map[i].height);
+
+    }
+    ctx.restore()
 }
 
 ////////////////HTML EVENTS CODE////////////////////////
@@ -89,22 +156,22 @@ function drawMap(){
 //     cvs.height = height;
 // });
 
-$(window).keydown((key)=>{
+$(window).keydown((key) => {
     keys[key.key] = true;
 });
 
-$(window).keyup((key)=>{
+$(window).keyup((key) => {
     keys[key.key] = false;
 });
 
 //////////////////////UTILS/////////////////////////////////
 
-function loadImagesThenAnimate(folders){
-    for(let folder in folders){
-        for(let image in folders[folder]){
+function loadImagesThenAnimate(folders) {
+    for (let folder in folders) {
+        for (let image in folders[folder]) {
             promises.push(new Promise((resolve, reject) => {
                 img = new Image();
-                img.onload = function() {
+                img.onload = function () {
                     resolve('resolved')
                 };
                 img.src = './images/' + folder + '/' + folders[folder][image];
@@ -167,6 +234,75 @@ function editorConfig(){
     });
 }
 
+////////////////////COLLISION///////////////////////////////
+
+function move(direction, collisionMap, quadTree) {
+
+
+    let speed = 3;
+    if (direction === 0) {
+        for (let i = 0; i < collisionMap.length; i++) {
+            let player = cloneMe(me);
+            player.x -= speed;
+            if (checkCollision(player, collisionMap[i])) {
+                return false;
+            }
+        }
+
+        me.x -= speed;
+    } else if (direction === 1) {
+        for (let i = 0; i < collisionMap.length; i++) {
+            let player = cloneMe(me);
+            player.x += speed;
+            if (checkCollision(player, collisionMap[i])) {
+                return false;
+            }
+        }
+        me.x += speed;
+    } else if (direction === 2) {
+        for (let i = 0; i < collisionMap.length; i++) {
+            let player = cloneMe(me);
+            player.y += speed;
+            if (checkCollision(player, collisionMap[i])) {
+                return false;
+            }
+        }
+        me.y += speed;
+    } else if (direction === 3) {
+        for (let i = 0; i < collisionMap.length; i++) {
+            let player = cloneMe(me);
+            player.y -= speed;
+            if (checkCollision(player, collisionMap[i])) {
+                return false;
+            }
+        }
+        me.y -= speed;
+    }
+    return true;
+}
+
+function checkCollision(me, object) {
+
+    if (me.x < object.x + object.width &&
+        me.x + me.width > object.x &&
+        me.y < object.y + object.height &&
+        me.y + me.height > object.y) {
+        return true;
+        // collision detected!
+    }
+    return false;
+
+}
+function cloneMe(me) {
+    let player ={
+        x:me.x,
+        y:me.y,
+        width:me.width,
+        height:me.height
+    }
+    return player
+}
+
 function editor(){
     updateEditor();
     requestId = requestAnimationFrame(editor);
@@ -215,6 +351,7 @@ function updateEditor(){
                     message.rectangles.push({x:xOffset, y:yOffset, w:r.w, h:r.h})
                 }
                 console.log(message);
+                alert(JSON.stringify(message))
             }
         }
     }
@@ -228,7 +365,7 @@ function updateEditor(){
         }catch (e) {
 
         }
-        
+
     }
     for (let rectangle in rectangles){
         let r = rectangles[rectangle];
