@@ -22,9 +22,37 @@
             margin: 0;
             padding: 0;
         }
+        #editor{
+            position: absolute;
+            left: 2px;
+            top: 2px;
+        }
+        #add{
+            position: absolute;
+            left: 60px;
+            top: 2px;
+            display: none;
+        }
+        #imagename{
+            position: absolute;
+            left: 2px;
+            top: 30px;
+            display: none;
+        }
+        #select{
+            position: absolute;
+            left: 170px;
+            top: 30px;
+            display: none;
+        }
     </style>
 </head>
 <body>
+<button id="editor">Editor</button>
+<button id="add">Add Rectangle</button>
+<button id="select">Select</button>
+<input type="text" id="imagename" placeholder="Image Name">
+
 <canvas id="canvas"></canvas>
 </body>
 </html>
