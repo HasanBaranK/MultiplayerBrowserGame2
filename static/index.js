@@ -85,12 +85,13 @@ let lastMoveTime;
 function update() {
     //socket.emit("movement", {"w": keys["w"], "a": keys["a"], "s": keys["s"], "d": keys["d"]});
     cameraFollow();
-    doTheMovement();
+    //doTheMovement();
     ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
     drawMap();
     drawPlayer();
     drawTreeMap();
-    //drawMapCollision2(data.collisionMap)
+    drawPlayerCollision()
+    drawMapCollision2(data.collisionMap)
 }
 
 function doTheMovement(){
@@ -122,6 +123,8 @@ function doTheMovement(){
                 locationChanged = true;
             }
         }
+    }else {
+        console.log("does not let")
     }
     if (locationChanged) {
         socket.emit("movement", {"w": keys["w"], "a": keys["a"], "s": keys["s"], "d": keys["d"], "x": me.x, "y": me.y});
@@ -129,35 +132,46 @@ function doTheMovement(){
 }
 
 function drawPlayer(){
+    let moved = false;
     if(keys["w"] && keys["d"]){
         animationChecker("runUPRIGHT");
+        moved = true;
     }
     else if(keys["w"] && keys["a"]){
         animationChecker("runUPLEFT");
+        moved = true;
     }
     else if(keys["s"] && keys["d"]){
         animationChecker("runDOWNRIGHT");
+        moved = true;
     }
     else if(keys["s"] && keys["a"]){
         animationChecker("runDOWNLEFT");
+        moved = true;
     }
     else if(keys["w"]){
         animationChecker("runUP");
+        moved = true;
     }
     else if(keys["s"]){
         animationChecker("runDOWN");
+        moved = true;
     }
     else if(keys["a"]){
         animationChecker("runLEFT");
+        moved = true;
     }
     else if(keys["d"]){
         animationChecker("runRIGHT");
+        moved = true;
     }
     else{
         animationChecker("idle");
     }
 
-
+    if(moved){
+        doTheMovement();
+    }
 
 }
 
@@ -215,7 +229,25 @@ function drawMapCollision(map) {
     }
     ctx.restore()
 }
-
+function drawPlayerCollision() {
+    let player = cloneMe(me);
+    let offset = {
+        x:10,
+        y:17,
+        width:14,
+        height:14,
+    }
+    player.x += offset.x
+    player.y += offset.y
+    player.width = offset.width
+    player.height = offset.height
+    ctx.save()
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+    //ctx.fillStyle = "rgba(255,0,18,0.7)";
+    //ctx.fillRect(me.x, me.y, me.width, me.height);
+    ctx.restore()
+}
 function drawMapCollision2(map) {
     ctx.save()
     ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
@@ -318,12 +350,21 @@ function editorConfig(){
 ////////////////////COLLISION///////////////////////////////
 
 function move(direction, collisionMap, quadTree) {
-
-
-    let speed = 3;
+    let player = cloneMe(me);
+    let offset = {
+        x:10,
+        y:17,
+        width:14,
+        height:14,
+    }
+    player.x += offset.x
+    player.y += offset.y
+    player.width = offset.width
+    player.height = offset.height
+    let speed = 2;
     if (direction === 0) {
         for (let i = 0; i < collisionMap.length; i++) {
-            let player = cloneMe(me);
+
             player.x -= speed;
             if (checkCollision(player, collisionMap[i])) {
                 return false;
@@ -333,7 +374,7 @@ function move(direction, collisionMap, quadTree) {
         me.x -= speed;
     } else if (direction === 1) {
         for (let i = 0; i < collisionMap.length; i++) {
-            let player = cloneMe(me);
+
             player.x += speed;
             if (checkCollision(player, collisionMap[i])) {
                 return false;
@@ -342,7 +383,7 @@ function move(direction, collisionMap, quadTree) {
         me.x += speed;
     } else if (direction === 2) {
         for (let i = 0; i < collisionMap.length; i++) {
-            let player = cloneMe(me);
+
             player.y += speed;
             if (checkCollision(player, collisionMap[i])) {
                 return false;
@@ -351,7 +392,7 @@ function move(direction, collisionMap, quadTree) {
         me.y += speed;
     } else if (direction === 3) {
         for (let i = 0; i < collisionMap.length; i++) {
-            let player = cloneMe(me);
+
             player.y -= speed;
             if (checkCollision(player, collisionMap[i])) {
                 return false;
@@ -363,11 +404,7 @@ function move(direction, collisionMap, quadTree) {
 }
 
 function checkCollision(me, object) {
-    let offset = {
-        x:5,
-        y:5,
-        z:5,
-    }
+
     if (me.x < object.x + object.width &&
         me.x + me.width > object.x &&
         me.y < object.y + object.height &&
