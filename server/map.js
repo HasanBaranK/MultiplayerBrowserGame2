@@ -23,7 +23,7 @@ function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSiz
         //if (!collisionMap[i]) collisionMap[i] = [];
         for (let k = startY; k < endY; k += gridSizeY) {
             map[i][k] = {
-                tile: "dirt" + Math.floor(Math.random() * 10).toString() +"_block",
+                tile: "tile-2",//"dirt" + Math.floor(Math.random() * 10).toString() +"_block",
                 item: null,
                 tree: null,
                 plant: null,
@@ -52,12 +52,12 @@ function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSiz
                 continue;
             } else {
                 //add Tree
-                let randTree = Math.floor(Math.random()*2)+1;
+                let randTree = Math.floor(Math.random()*6)+1;
 
-                let treeName= "Pine-" + randTree
+                let treeName= "tree-" + randTree
                 map[treeX][treeY].tree = treeName;
                 let tree = {
-                    name:"Pine-"+ randTree,
+                    name:treeName,
                     x:treeX,
                     y:treeY,
                 }
@@ -110,10 +110,10 @@ function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSiz
                     || map[treeX + gridSizeX][treeY - gridSizeY].plant != null || map[treeX - gridSizeX][treeY + gridSizeY].plant != null) {
                     continue;
                 }else {
-                let randRock = Math.floor(Math.random() * 6) + 1;
-                map[treeX][treeY].plant = "rock";
+                let randRock = Math.floor(Math.random() * 4) + 1;
+                map[treeX][treeY].plant = "bush";
                 let rock = {
-                    name: "rock",// + randRock,
+                    name: "bush-" + randRock,
                     x: treeX,
                     y: treeY,
                 }
