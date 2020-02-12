@@ -1,7 +1,7 @@
 /////////////////////INITIALIZATION CODE//////////////////////////
 let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promises = [], players = {}, me = {},
-    currentCoords = {};
-let camera = new Camera(0, 0, 0, 0, 4);
+    currentCoords = {}, animator = {state:"idle"};
+let camera = new Camera(0, 0, 0);
 let requestId;
 
 $(document).ready(init);
@@ -10,10 +10,10 @@ $(document).ready(init);
 
 function init(){
 
-    editorConfig();
-
     cvs = $("#canvas")[0];
     ctx = cvs.getContext("2d");
+
+    editorConfig();
     configure();
 
     socket = io.connect('http://localhost:5000');
@@ -40,6 +40,20 @@ function init(){
     });
 }
 
+function setUpAnimations(){
+    animator.player = new Player();
+    animator.player.addAnimation("runUP", images["run"], 0, 7, 0, 32, 32, 32, 32, 100);
+    animator.player.addAnimation("runUPRIGHT", images["run"], 0, 7, 1, 32, 32, 32, 32, 100);
+    animator.player.addAnimation("runRIGHT", images["run"], 0, 7, 2, 32, 32, 32, 32, 100);
+    animator.player.addAnimation("runDOWNRIGHT", images["run"], 0, 7, 3, 32, 32, 32, 32, 100);
+    animator.player.addAnimation("runDOWN", images["run"], 0, 7, 4, 32, 32, 32, 32, 100);
+    animator.player.addAnimation("runDOWNLEFT", images["run"], 0, 7, 5, 32, 32, 32, 32, 100);
+    animator.player.addAnimation("runLEFT", images["run"], 0, 7, 6, 32, 32, 32, 32, 100);
+    animator.player.addAnimation("runUPLEFT", images["run"], 0, 7, 7, 32, 32, 32, 32, 100);
+
+    animator.player.addAnimation("idle", images["idle"], 0, 7, 4, 32, 32, 32, 32, 100);
+}
+
 function configure() {
     cvs.width = window.innerWidth;
     cvs.height = window.innerHeight;
@@ -56,13 +70,16 @@ function animate() {
 let lastMoveTime;
 function update() {
     //socket.emit("movement", {"w": keys["w"], "a": keys["a"], "s": keys["s"], "d": keys["d"]});
-    if (me.x !== currentCoords.x || me.y !== currentCoords.y) {
-        let xDifference = (currentCoords.x - me.x);
-        let yDifference = (currentCoords.y - me.y);
-        camera.move(-xDifference, -yDifference);
-        currentCoords.x = me.x;
-        currentCoords.y = me.y;
-    }
+    cameraFollow();
+    doTheMovement();
+    ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
+    drawMap();
+    drawPlayer();
+    drawTreeMap();
+    //drawMapCollision2(data.collisionMap)
+}
+
+function doTheMovement(){
     let locationChanged = false;
     let quadTree = [];
     let d = new Date();
@@ -95,9 +112,57 @@ function update() {
     if (locationChanged) {
         socket.emit("movement", {"w": keys["w"], "a": keys["a"], "s": keys["s"], "d": keys["d"], "x": me.x, "y": me.y});
     }
-    ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
-    drawMap();
-    //drawMapCollision2(data.collisionMap)
+}
+
+function drawPlayer(){
+    if(keys["w"] && keys["d"]){
+        animationChecker("runUPRIGHT");
+    }
+    else if(keys["w"] && keys["a"]){
+        animationChecker("runUPLEFT");
+    }
+    else if(keys["s"] && keys["d"]){
+        animationChecker("runDOWNRIGHT");
+    }
+    else if(keys["s"] && keys["a"]){
+        animationChecker("runDOWNLEFT");
+    }
+    else if(keys["w"]){
+        animationChecker("runUP");
+    }
+    else if(keys["s"]){
+        animationChecker("runDOWN");
+    }
+    else if(keys["a"]){
+        animationChecker("runLEFT");
+    }
+    else if(keys["d"]){
+        animationChecker("runRIGHT");
+    }
+    else{
+        animationChecker("idle");
+    }
+
+
+
+}
+
+function animationChecker(stateName){
+    if(animator.state!==stateName){
+        animator.player.animations[animator.state].reset();
+    }
+    animator.state = stateName;
+    animator.player.draw(ctx, stateName, me.x, me.y);
+}
+
+function cameraFollow(){
+    if (me.x !== currentCoords.x || me.y !== currentCoords.y) {
+        let xDifference = (currentCoords.x - me.x);
+        let yDifference = (currentCoords.y - me.y);
+        camera.move(ctx, -xDifference, -yDifference);
+        currentCoords.x = me.x;
+        currentCoords.y = me.y;
+    }
 }
 
 function drawMap() {
@@ -109,10 +174,9 @@ function drawMap() {
             }
         }
     }
-    ctx.fillRect(me.x, me.y , 32, 32);
-    ctx.fillStyle = 'red';
-    ctx.fillRect(camera.x + cvs.width / 2 - 8, camera.y + cvs.height / 2 - 8 , 16, 16);
-    ctx.fillStyle = 'black';
+}
+
+function drawTreeMap(){
     for (tree in data.treeMap) {
         let block = data.treeMap[tree];
         if ((block.name).includes("rock")) {
@@ -182,6 +246,7 @@ function loadImagesThenAnimate(folders) {
         }
     }
     Promise.all(promises).then(() => {
+        setUpAnimations();
         requestId = window.requestAnimationFrame(animate);
     });
 }
@@ -204,7 +269,7 @@ function editorConfig(){
             $("#select")[0].style.display = "block";
             editorMode = true;
             ctx.clearRect(camera.x,camera.y,cvs.width,cvs.height);
-            camera.set(0,0);
+            camera.set(ctx,0,0);
             window.cancelAnimationFrame(requestId);
             requestId = window.requestAnimationFrame(editor);
         }

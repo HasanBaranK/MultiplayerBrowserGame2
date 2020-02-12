@@ -1,26 +1,26 @@
 class Camera {
-    constructor(x, y, ppX, ppY, speed){
+    constructor(x, y){
         this.x = x;
         this.y = y;
         this.oldX = x;
         this.oldY = y;
     }
-    move(x,y){
+    move(_ctx, x, y){
         this.x+=x;
         this.y+=y;
-        ctx.translate(-x, -y);
+        _ctx.translate(-x, -y);
     }
-    set(x, y){
-        ctx.translate(this.x, this.y);
+    set(_ctx, x, y){
+        _ctx.translate(this.x, this.y);
         this.oldX = this.x;
         this.oldY = this.y;
         this.x = x;
         this.y = y;
     }
-    restore(){
+    restore(_ctx){
         this.x = this.oldX;
         this.y = this.oldY;
-        ctx.translate(-this.x, -this.y);
+        _ctx.translate(-this.x, -this.y);
     }
 }
 
@@ -40,11 +40,11 @@ class Animation {
         this.animTime = Date.now();
         this.currentTime = Date.now();
     }
-    draw(ctx, x, y){
+    draw(_ctx, x, y){
         if(this.currentColumn > this.endColumn){
             this.currentColumn = this.startColumn;
         }
-        ctx.drawImage(this.img, this.currentColumn * this.width, this.row * this.height,
+        _ctx.drawImage(this.img, this.currentColumn * this.width, this.row * this.height,
             this.width, this.height, x, y, this.cWidth, this.cHeight);
         this.currentTime = Date.now();
         if(this.currentTime > this.animTime){
@@ -58,16 +58,11 @@ class Animation {
 }
 
 class Player {
-    constructor(state){
-        this.state = state;
-        this.facing = 'right';
-        this.attacking = false;
+    constructor(){
         this.animations = [];
-        this.animationsOnce = [];
-        this.animationsFinal = [];
     }
-    draw(ctx, name){
-        this.animations[name].draw(ctx, this.state.x, this.state.y);
+    draw(_ctx, name, x, y){
+        this.animations[name].draw(_ctx, x, y);
     }
     addAnimation(name, img, startColumn, endColumn, row, width, height, cWidth, cHeight, speed){
         this.animations[name] = new Animation(img, startColumn, endColumn, row, width, height, cWidth, cHeight, speed);
