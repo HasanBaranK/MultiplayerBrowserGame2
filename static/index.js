@@ -1,5 +1,5 @@
 /////////////////////INITIALIZATION CODE//////////////////////////
-let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promises = [], players = {}, me = {},
+let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promises = [], players = {}, me = undefined,
     currentCoords = {}, animator = {state:"idle"};
 let camera = new Camera(0, 0, 0);
 let requestId;
@@ -35,7 +35,20 @@ function init(){
         socket.on("players", (res) => {
             players = res;
 
-            me = players[socket.id];
+
+            if(me === undefined){
+                me = players[socket.id]
+
+            }else {
+                let updated = players[socket.id];
+                updated.x = me.x;
+                updated.y = me.y;
+                me = updated;
+
+
+            }
+
+            socket.emit("players");
         });
     });
 }
@@ -350,7 +363,11 @@ function move(direction, collisionMap, quadTree) {
 }
 
 function checkCollision(me, object) {
-
+    let offset = {
+        x:5,
+        y:5,
+        z:5,
+    }
     if (me.x < object.x + object.width &&
         me.x + me.width > object.x &&
         me.y < object.y + object.height &&

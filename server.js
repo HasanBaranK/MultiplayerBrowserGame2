@@ -67,8 +67,8 @@ io.on('connection', function (socket) {
             health: 100,
             maximumEnergy: 100,
             energy: 100,
-            width: 32,
-            height: 32,
+            width: 16,
+            height: 16,
             isDead: false,
             isMob: false,
             inventory: [],
@@ -91,6 +91,7 @@ io.on('connection', function (socket) {
         socket.join('players');
         console.log("Player joined");
         socket.emit("joined","success");
+        socket.emit("players",players);
     });
     socket.on('getimages', function (click) {
         socket.emit('images', images);
@@ -172,10 +173,6 @@ function movePlayers(players) {
 }
 setInterval(function () {
     movePlayers(players);
-
-        if(socket2) {
-            socket2.emit("players", players)
-        }
 
     gameTime = timeFunctions.updateGameTime(gameTime, 600)
 }, 1000/60);
