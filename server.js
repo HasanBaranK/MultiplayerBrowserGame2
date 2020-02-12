@@ -134,10 +134,10 @@ function movePlayer(player, data, speed) {
     if (data == null) {
         return
     }
-    //let d = new Date();
-    //let currentTime = Math.round(d.getTime());
-    //if (player.lastMoveTime + 5 < currentTime) {
-    //    player.lastMoveTime = currentTime;
+    let d = new Date();
+    let currentTime = Math.round(d.getTime());
+    if (player.lastMoveTime + 5 < currentTime) {
+        player.lastMoveTime = currentTime;
         /*if (data.a) {
             collisionFunctions.move("left", player, gridSizeX, collisionMap, speed)
         }
@@ -158,7 +158,7 @@ function movePlayer(player, data, speed) {
         if(data.y){
             player.y = data.y;
         }
-    //}
+    }
 }
 function movePlayers(players) {
 
