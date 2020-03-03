@@ -22,8 +22,9 @@ function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSiz
         if (!map[i]) map[i] = [];
         //if (!collisionMap[i]) collisionMap[i] = [];
         for (let k = startY; k < endY; k += gridSizeY) {
+            let rand = Math.floor(Math.random() * Math.floor(2));
             map[i][k] = {
-                tile: "tile-2",//"dirt" + Math.floor(Math.random() * 10).toString() +"_block",
+                tile: "grass"+rand,//"dirt" + Math.floor(Math.random() * 10).toString() +"_block",
                 item: null,
                 tree: null,
                 plant: null,
