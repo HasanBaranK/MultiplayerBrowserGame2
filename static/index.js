@@ -3,13 +3,15 @@ let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promis
     currentCoords = {}, animator = {state:"idle"}, uis = {}, gameState = {};
 let camera = new Camera(0, 0, 0);
 let requestId;
+import {test} from "./test.js";
+import {Camera,Player,Animation,Inventory}  from "./classes.js";
 
 $(document).ready(init);
 
 /////////////////////GAME FUNCTIONS//////////////////////////////
 
 function init(){
-
+    test();
     cvs = $("#canvas")[0];
     ctx = cvs.getContext("2d");
 
@@ -206,8 +208,8 @@ function cameraFollow(){
 }
 
 function drawMap() {
-    for (blockX in data.map) {
-        for (blockY in data.map[blockX]) {
+    for (let blockX in data.map) {
+        for (let blockY in data.map[blockX]) {
             let block = data.map[blockX][blockY];
             if (block) {
                 ctx.drawImage(images[block.tile], blockX, blockY, 64, 64);
@@ -217,7 +219,7 @@ function drawMap() {
 }
 
 function drawTreeMap(){
-    for (tree in data.treeMap) {
+    for (let tree in data.treeMap) {
         let block = data.treeMap[tree];
         if ((block.name).includes("bush")) {
             ctx.drawImage(images[block.name], block.x, block.y, 32, 32);
@@ -283,7 +285,7 @@ function loadImagesThenAnimate(folders) {
     for (let folder in folders) {
         for (let image in folders[folder]) {
             promises.push(new Promise((resolve, reject) => {
-                img = new Image();
+                let img = new Image();
                 img.onload = function () {
                     resolve('resolved')
                 };

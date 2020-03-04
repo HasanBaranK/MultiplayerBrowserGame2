@@ -29,6 +29,7 @@ let maps = mapFunctions.generateMap(0,0,640,640,"Forest",gridSizeX,gridSizeY,rec
 let map = maps.map
 let collisionMap = maps.collisionMap
 let treeMap = maps.treeMap
+let quadtree = maps.quadtree
 
 //game time
 let gameTime = 0;
@@ -108,7 +109,8 @@ io.on('connection', function (socket) {
             map: map,
             treeMap: treeMap,
             gameTime: gameTime,
-            collisionMap:collisionMap
+            collisionMap:collisionMap,
+            quadtree:quadtree,
         };
         socket.emit('data', gameData);
     });
@@ -139,20 +141,6 @@ function movePlayer(player, data, speed) {
     let currentTime = Math.round(d.getTime());
     if (player.lastMoveTime + 5 < currentTime) {
         player.lastMoveTime = currentTime;
-        /*if (data.a) {
-            collisionFunctions.move("left", player, gridSizeX, collisionMap, speed)
-        }
-        if (data.w) {
-            collisionFunctions.move("up", player, gridSizeX, collisionMap, speed)
-
-        }
-        if (data.d) {
-            collisionFunctions.move("right", player, gridSizeX, collisionMap, speed)
-
-        }
-        if (data.s) {
-            collisionFunctions.move("down", player, gridSizeX, collisionMap, speed)
-        }*/
         if(data.x){
             player.x = data.x;
         }

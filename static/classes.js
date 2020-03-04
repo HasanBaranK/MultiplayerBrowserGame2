@@ -86,7 +86,7 @@ class Inventory {
         this.gameState =  gameState;
     }
     draw(_ctx, _camera){
-        if(gameState.inInventory){
+        if(this.gameState.inInventory){
             _ctx.globalAlpha = 0.8;
             for (let x = 0; x < this.xMul; x++){
                 for (let y = 0; y < this.yMul; y++){
@@ -98,4 +98,10 @@ class Inventory {
             _ctx.globalAlpha = 1;
         }
     }
+}
+export {
+    Camera,
+    Inventory,
+    Animation,
+    Player
 }

@@ -32,8 +32,16 @@ function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSiz
 
         }
     }
+    const {QuadTree, Box, Point, Circle} = require('js-quadtree');
 
+    const boundingArea = new Box(0, 0, sizeX, sizeY);
 
+    const config = {
+        capacity: 10,           // Specify the maximum amount of point per node (default: 4)
+        removeEmptyNodes : true // Specify if the quadtree has to remove subnodes if they are empty (default: false).
+    };
+
+    const quadtree = new QuadTree(boundingArea, config);
     //Trees
     amountOfTrees = Math.floor(Math.random() * Math.floor((amountOfBlocks / 15))) + 1;
     let amountOfRocks = Math.floor(Math.random() * Math.floor((amountOfBlocks / 15)))*2 + 1;
@@ -75,7 +83,8 @@ function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSiz
                                 width: element.width,
                                 height: element.height,
                             }
-                            collisionMap.push(collisionObject)
+                            let index = collisionMap.push(collisionObject)
+                            quadtree.insert(new Point(element.x + treeX, treeY + element.y, {rectangle: collisionObject}));
                         }
                     )
                 }
@@ -130,8 +139,10 @@ function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSiz
     let maps = {
         map: map,
         treeMap: treeMap,
-        collisionMap: collisionMap
+        collisionMap: collisionMap,
+        quadtree: quadtree,
     }
+
     return maps;
 }
 function myGrid(x, y, gridSize) {
@@ -157,6 +168,9 @@ function myGrid(x, y, gridSize) {
     }
     return position
 }
-function addQuadTree() {
+function addQuadTree(index,collisionObject,quadTree,sizeX,sizeY) {
+
+
+
 
 }
