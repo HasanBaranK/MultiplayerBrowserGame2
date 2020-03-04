@@ -109,8 +109,7 @@ io.on('connection', function (socket) {
             map: map,
             treeMap: treeMap,
             gameTime: gameTime,
-            collisionMap:collisionMap,
-            quadtree:quadtree,
+            collisionMap:collisionMap
         };
         socket.emit('data', gameData);
     });

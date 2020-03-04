@@ -3,12 +3,33 @@ let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promis
     currentCoords = {}, animator = {state:"idle"}, uis = {}, gameState = {};
 let camera = new Camera(0, 0, 0);
 let requestId;
+let quadTree = {};
 import {test} from "./test.js";
 import {Camera,Player,Animation,Inventory}  from "./classes.js";
 
 $(document).ready(init);
 
 /////////////////////GAME FUNCTIONS//////////////////////////////
+
+function initializeQuadTree(collisionMap) {
+    quadTree = new Quadtree({
+        x: 0,
+        y: 0,
+        width: 8000,
+        height: 6000
+    }, 15, 6);
+
+    for (let i = 0; i <collisionMap.length ; i++) {
+        let collision = collisionMap[i];
+        quadTree.insert({
+            x: collision.x,
+            y: collision.y,
+            width: collision.width,
+            height: collision.height
+        });
+    }
+
+}
 
 function init(){
     test();
@@ -23,6 +44,8 @@ function init(){
         socket.emit("getimages", {});
         socket.on("data", (res) => {
             data = res;
+            initializeQuadTree(data.collisionMap);
+            //quadTree = data.quadtree;
             socket.emit("newplayer", {});
         });
         socket.on("images", (res) => {
@@ -105,7 +128,7 @@ setInterval(function(){ doTheMovement(); }, 20);
 
 function doTheMovement(){
     let locationChanged = false;
-    let quadTree = [];
+
     let step = 8;
         if (keys["a"]) {
             if (move(0, data.collisionMap, quadTree,2)) {
@@ -353,6 +376,20 @@ function editorConfig(){
 
 ////////////////////COLLISION///////////////////////////////
 
+function checkCollision2(player, quadTree) {
+    var elements = quadTree.retrieve({
+        x: player.x,
+        y: player.y,
+        width: player.width,
+        height: player.height
+    });
+    return checkCollision(player,elements);
+    if(elements !== null) {
+        return false;
+    }
+    return true;
+}
+
 function move(direction, collisionMap, quadTree,speed) {
     let player = cloneMe(me);
     let offset = {
@@ -370,7 +407,7 @@ function move(direction, collisionMap, quadTree,speed) {
         for (let i = 0; i < collisionMap.length; i++) {
 
             player.x -= detail;
-            if (checkCollision(player, collisionMap[i])) {
+            if (checkCollision2(player,quadTree)) {
                 return false;
             }
         }
@@ -380,7 +417,7 @@ function move(direction, collisionMap, quadTree,speed) {
         for (let i = 0; i < collisionMap.length; i++) {
 
             player.x += detail;
-            if (checkCollision(player, collisionMap[i])) {
+            if (checkCollision2(player,quadTree)) {
                 return false;
             }
         }
@@ -389,7 +426,7 @@ function move(direction, collisionMap, quadTree,speed) {
         for (let i = 0; i < collisionMap.length; i++) {
 
             player.y += detail;
-            if (checkCollision(player, collisionMap[i])) {
+            if (checkCollision2(player, quadTree)) {
                 return false;
             }
         }
@@ -398,7 +435,7 @@ function move(direction, collisionMap, quadTree,speed) {
         for (let i = 0; i < collisionMap.length; i++) {
 
             player.y -= detail;
-            if (checkCollision(player, collisionMap[i])) {
+            if (checkCollision2(player, quadTree)) {
                 return false;
             }
         }
@@ -407,14 +444,17 @@ function move(direction, collisionMap, quadTree,speed) {
     return true;
 }
 
-function checkCollision(me, object) {
+function checkCollision(me, objects) {
 
-    if (me.x < object.x + object.width &&
-        me.x + me.width > object.x &&
-        me.y < object.y + object.height &&
-        me.y + me.height > object.y) {
-        return true;
-        // collision detected!
+    for (let i = 0; i < objects.length ; i++) {
+       let object = objects[i];
+       if (me.x < object.x + object.width &&
+            me.x + me.width > object.x &&
+            me.y < object.y + object.height &&
+            me.y + me.height > object.y) {
+            return true;
+            // collision detected!
+        }
     }
     return false;
 
