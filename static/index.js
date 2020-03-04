@@ -1,6 +1,6 @@
 /////////////////////INITIALIZATION CODE//////////////////////////
 let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promises = [], players = {}, me = undefined,
-    currentCoords = {}, animator = {state:"idle"};
+    currentCoords = {}, animator = {state:"idle"}, uis = {}, gameState = {};
 let camera = new Camera(0, 0, 0);
 let requestId;
 
@@ -53,8 +53,22 @@ function init(){
 }
 
 function setUpAnimations(){
+    animator.player = new Player();
     let speed = 80;
+    animator.player.addAnimation("runUP", images["run"], 0, 7, 0, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runUPRIGHT", images["run"], 0, 7, 1, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runRIGHT", images["run"], 0, 7, 2, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runDOWNRIGHT", images["run"], 0, 7, 3, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runDOWN", images["run"], 0, 7, 4, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runDOWNLEFT", images["run"], 0, 7, 5, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runLEFT", images["run"], 0, 7, 6, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runUPLEFT", images["run"], 0, 7, 7, 32, 32, 32, 32, speed);
 
+    animator.player.addAnimation("idle", images["idle"], 0, 7, 4, 32, 32, 32, 32, 120);
+}
+
+function setUpUI(){
+    uis["inventory"] = new Inventory(images["itemframe2"], 16, 200, 4 ,4, 10, 5, gameState);
 }
 
 function configure() {
@@ -79,8 +93,11 @@ function update() {
     drawMap();
     drawPlayer();
     drawTreeMap();
-    drawPlayerCollision()
-    drawMapCollision(data.collisionMap)
+    for (let ui in uis){
+        uis[ui].draw(ctx, camera);
+    }
+    //drawPlayerCollision()
+    //drawMapCollision(data.collisionMap)
 }
 setInterval(function(){ doTheMovement(); }, 20);
 
@@ -141,7 +158,33 @@ function doTheMovement(){
 }
 
 function drawPlayer(){
-
+    if(keys["w"] && keys["d"]){
+        animationChecker("runUPRIGHT");
+    }
+    else if(keys["w"] && keys["a"]){
+        animationChecker("runUPLEFT");
+    }
+    else if(keys["s"] && keys["d"]){
+        animationChecker("runDOWNRIGHT");
+    }
+    else if(keys["s"] && keys["a"]){
+        animationChecker("runDOWNLEFT");
+    }
+    else if(keys["w"]){
+        animationChecker("runUP");
+    }
+    else if(keys["s"]){
+        animationChecker("runDOWN");
+    }
+    else if(keys["a"]){
+        animationChecker("runLEFT");
+    }
+    else if(keys["d"]){
+        animationChecker("runRIGHT");
+    }
+    else{
+        animationChecker("idle");
+    }
 }
 
 function animationChecker(stateName){
@@ -225,6 +268,9 @@ function drawMapCollision(map) {
 
 $(window).keydown((key) => {
     keys[key.key] = true;
+    if(key.key === "i"){
+        gameState.inInventory = !gameState.inInventory;
+    }
 });
 
 $(window).keyup((key) => {
@@ -248,6 +294,7 @@ function loadImagesThenAnimate(folders) {
     }
     Promise.all(promises).then(() => {
         setUpAnimations();
+        setUpUI();
         requestId = window.requestAnimationFrame(animate);
     });
 }
@@ -391,6 +438,18 @@ function updateEditor(){
         timebefore = timenow;
         if(selectedRectangleIndex != -1){
             let r = rectangles[selectedRectangleIndex];
+            if(keys["w"]){
+                rectangles[selectedRectangleIndex].y--;
+            }
+            if(keys["s"]){
+                rectangles[selectedRectangleIndex].y++;
+            }
+            if(keys["a"]){
+                rectangles[selectedRectangleIndex].x--;
+            }
+            if(keys["d"]){
+                rectangles[selectedRectangleIndex].x++;
+            }
             if(keys["ArrowUp"] && r.h > 5){
                 rectangles[selectedRectangleIndex].h--;
             }

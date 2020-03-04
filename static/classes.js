@@ -73,3 +73,29 @@ class Player {
         }
     }
 }
+
+class Inventory {
+    constructor(itemFrameImg, x, y, xOff, yOff, xMul, yMul, gameState) {
+        this.itemFrameImg = itemFrameImg;
+        this.x = x;
+        this.y = y;
+        this.xOff = xOff;
+        this.yOff = yOff;
+        this.xMul = xMul;
+        this.yMul = yMul;
+        this.gameState =  gameState;
+    }
+    draw(_ctx, _camera){
+        if(gameState.inInventory){
+            _ctx.globalAlpha = 0.8;
+            for (let x = 0; x < this.xMul; x++){
+                for (let y = 0; y < this.yMul; y++){
+                    let xReal = this.x + (x * (this.xOff + this.itemFrameImg.width)) + _camera.x;
+                    let yReal = this.y + (y * (this.yOff + this.itemFrameImg.height)) + _camera.y;
+                    _ctx.drawImage(this.itemFrameImg, xReal, yReal);
+                }
+            }
+            _ctx.globalAlpha = 1;
+        }
+    }
+}
