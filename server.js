@@ -18,14 +18,14 @@ let mapFunctions = require("./server/map.js");
 let collisionFunctions = require("./server/collision.js");
 let timeFunctions = require("./server/time.js");
 
-let gridSizeX =32;
-let gridSizeY =32;
+let gridSizeX =64;
+let gridSizeY =64;
 //get collisions
 let rawdata = fs.readFileSync("server/collisions.json");
 let rectangles = JSON.parse(rawdata);
 
 //generate Map
-let maps = mapFunctions.generateMap(0,0,640,640,"Forest",gridSizeX,gridSizeY,rectangles)
+let maps = mapFunctions.generateMap(0,0,3000,3000,"Forest",gridSizeX,gridSizeY,rectangles)
 let map = maps.map
 let collisionMap = maps.collisionMap
 let treeMap = maps.treeMap

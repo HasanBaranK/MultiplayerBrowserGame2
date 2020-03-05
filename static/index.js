@@ -1,42 +1,25 @@
 /////////////////////INITIALIZATION CODE//////////////////////////
+
+
 let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promises = [], players = {}, me = undefined,
-    currentCoords = {}, animator = {state:"idle"}, uis = {}, gameState = {};
+    currentCoords = {}, animator = {state: "idle"}, uis = {}, gameState = {};
 let camera = new Camera(0, 0, 0);
 let requestId;
 let quadTree = {};
-import {test} from "./test.js";
-import {Camera,Player,Animation,Inventory}  from "./classes.js";
+import {Camera, Player, Inventory} from "./classes.js";
+import {initializeQuadTree,move} from "./collision.js";
+import {editorConfig} from "./editor.js";
+import {drawPlayerCollision,drawMapCollision} from "./debug.js";
 
 $(document).ready(init);
 
 /////////////////////GAME FUNCTIONS//////////////////////////////
 
-function initializeQuadTree(collisionMap) {
-    quadTree = new Quadtree({
-        x: 0,
-        y: 0,
-        width: 8000,
-        height: 6000
-    }, 15, 6);
-
-    for (let i = 0; i <collisionMap.length ; i++) {
-        let collision = collisionMap[i];
-        quadTree.insert({
-            x: collision.x,
-            y: collision.y,
-            width: collision.width,
-            height: collision.height
-        });
-    }
-
-}
-
-function init(){
-    test();
+function init() {
     cvs = $("#canvas")[0];
     ctx = cvs.getContext("2d");
 
-    editorConfig();
+    editorConfig(ctx,camera,requestId);
     configure();
 
     socket = io.connect('http://localhost:5000');
@@ -44,7 +27,8 @@ function init(){
         socket.emit("getimages", {});
         socket.on("data", (res) => {
             data = res;
-            initializeQuadTree(data.collisionMap);
+            console.log(data.map)
+            quadTree = initializeQuadTree(quadTree,data.collisionMap);
             //quadTree = data.quadtree;
             socket.emit("newplayer", {});
         });
@@ -60,10 +44,10 @@ function init(){
             players = res;
 
 
-            if(me === undefined){
+            if (me === undefined) {
                 me = players[socket.id]
 
-            }else {
+            } else {
                 let updated = players[socket.id];
                 updated.x = me.x;
                 updated.y = me.y;
@@ -75,25 +59,6 @@ function init(){
             socket.emit("players");
         });
     });
-}
-
-function setUpAnimations(){
-    animator.player = new Player();
-    let speed = 80;
-    animator.player.addAnimation("runUP", images["run"], 0, 7, 0, 32, 32, 32, 32, speed);
-    animator.player.addAnimation("runUPRIGHT", images["run"], 0, 7, 1, 32, 32, 32, 32, speed);
-    animator.player.addAnimation("runRIGHT", images["run"], 0, 7, 2, 32, 32, 32, 32, speed);
-    animator.player.addAnimation("runDOWNRIGHT", images["run"], 0, 7, 3, 32, 32, 32, 32, speed);
-    animator.player.addAnimation("runDOWN", images["run"], 0, 7, 4, 32, 32, 32, 32, speed);
-    animator.player.addAnimation("runDOWNLEFT", images["run"], 0, 7, 5, 32, 32, 32, 32, speed);
-    animator.player.addAnimation("runLEFT", images["run"], 0, 7, 6, 32, 32, 32, 32, speed);
-    animator.player.addAnimation("runUPLEFT", images["run"], 0, 7, 7, 32, 32, 32, 32, speed);
-
-    animator.player.addAnimation("idle", images["idle"], 0, 7, 4, 32, 32, 32, 32, 120);
-}
-
-function setUpUI(){
-    uis["inventory"] = new Inventory(images["itemframe2"], 16, 200, 4 ,4, 10, 5, gameState);
 }
 
 function configure() {
@@ -109,118 +74,117 @@ function animate() {
     update();
     requestId = requestAnimationFrame(animate);
 }
-let lastMoveTime;
+
+function setUpAnimations() {
+    animator.player = new Player();
+    let speed = 80;
+    animator.player.addAnimation("runUP", images["run"], 0, 7, 0, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runUPRIGHT", images["run"], 0, 7, 1, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runRIGHT", images["run"], 0, 7, 2, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runDOWNRIGHT", images["run"], 0, 7, 3, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runDOWN", images["run"], 0, 7, 4, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runDOWNLEFT", images["run"], 0, 7, 5, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runLEFT", images["run"], 0, 7, 6, 32, 32, 32, 32, speed);
+    animator.player.addAnimation("runUPLEFT", images["run"], 0, 7, 7, 32, 32, 32, 32, speed);
+
+    animator.player.addAnimation("idle", images["idle"], 0, 7, 4, 32, 32, 32, 32, 120);
+}
+
+function setUpUI() {
+    uis["inventory"] = new Inventory(images["itemframe2"], 16, 200, 4, 4, 10, 5, gameState);
+}
+
+
 function update() {
-    //socket.emit("movement", {"w": keys["w"], "a": keys["a"], "s": keys["s"], "d": keys["d"]});
     cameraFollow();
-    //doTheMovement();
     ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
-    drawMap();
+    drawTiles(14, 16, 64);
+    //drawMapBack(14, 16, 64);
     drawPlayer();
-    drawTreeMap();
-    for (let ui in uis){
+    drawMapFront(14, 16, 64);
+    for (let ui in uis) {
         uis[ui].draw(ctx, camera);
     }
+    //Debug
     //drawPlayerCollision()
     //drawMapCollision(data.collisionMap)
 }
-setInterval(function(){ doTheMovement(); }, 20);
 
-function doTheMovement(){
+setInterval(function () {
+    doTheMovement();
+}, 20);
+
+function doTheMovement() {
     let locationChanged = false;
 
     let step = 8;
-        if (keys["a"]) {
-            if (move(0, data.collisionMap, quadTree,2)) {
-                locationChanged = true;
-            }else {
-                for (let i = 0; i < step; i++) {
-                    if (move(0, data.collisionMap, quadTree,0.25)) {
-                        locationChanged = true;
-                    }
-                }
-            }
-
-        }
-        if (keys["d"]) {
-            if (move(1, data.collisionMap, quadTree,2)) {
-                locationChanged = true;
-            }else {
-                for (let i = 0; i < step; i++) {
-                    if (move(1, data.collisionMap, quadTree,0.25)) {
-                        locationChanged = true;
-                    }
-                }
-            }
-
-        }
-        if (keys["s"]) {
-            if (move(2, data.collisionMap, quadTree,2)) {
-                locationChanged = true;
-            }else {
-                for (let i = 0; i < step; i++) {
-                    if (move(2, data.collisionMap, quadTree,0.25)) {
-                        locationChanged = true;
-                    }
-                }
-            }
-        }
-        if (keys["w"]) {
-            if (move(3, data.collisionMap, quadTree,2)) {
-                locationChanged = true;
-            }else {
-                for (let i = 0; i < step; i++) {
-                    if (move(3, data.collisionMap, quadTree,0.25)) {
-                        locationChanged = true;
-                    }
-                }
-            }
+    if (keys["a"]) {
+        locationChanged = true;
+        if (move(me,0, quadTree, 2)) {
         }
 
+    }
+    if (keys["d"]) {
+        locationChanged = true;
+        if (move(me,1, quadTree, 2)) {
+        }
+
+    }
+    if (keys["s"]) {
+        locationChanged = true;
+        if (move(me,2, quadTree, 2)) {
+        }
+    }
+    if (keys["w"]) {
+        locationChanged = true;
+        if (move(me,3, quadTree, 2)) {
+        }
+    }
+    if (keys["p"]) {
+        //console.log(me.x+","+me.y)
+        let meX = Math.floor(me.x);
+        let meY = Math.floor(me.y);
+        meX = meX - meX % 32;
+        meY = meY - meY % 32;
+        console.log(meX + "," + meY)
+    }
     if (locationChanged) {
+
         socket.emit("movement", {"w": keys["w"], "a": keys["a"], "s": keys["s"], "d": keys["d"], "x": me.x, "y": me.y});
     }
 }
 
-function drawPlayer(){
-    if(keys["w"] && keys["d"]){
+function drawPlayer() {
+    if (keys["w"] && keys["d"]) {
         animationChecker("runUPRIGHT");
-    }
-    else if(keys["w"] && keys["a"]){
+    } else if (keys["w"] && keys["a"]) {
         animationChecker("runUPLEFT");
-    }
-    else if(keys["s"] && keys["d"]){
+    } else if (keys["s"] && keys["d"]) {
         animationChecker("runDOWNRIGHT");
-    }
-    else if(keys["s"] && keys["a"]){
+    } else if (keys["s"] && keys["a"]) {
         animationChecker("runDOWNLEFT");
-    }
-    else if(keys["w"]){
+    } else if (keys["w"]) {
         animationChecker("runUP");
-    }
-    else if(keys["s"]){
+    } else if (keys["s"]) {
         animationChecker("runDOWN");
-    }
-    else if(keys["a"]){
+    } else if (keys["a"]) {
         animationChecker("runLEFT");
-    }
-    else if(keys["d"]){
+    } else if (keys["d"]) {
         animationChecker("runRIGHT");
-    }
-    else{
+    } else {
         animationChecker("idle");
     }
 }
 
-function animationChecker(stateName){
-    if(animator.state!==stateName){
+function animationChecker(stateName) {
+    if (animator.state !== stateName) {
         animator.player.animations[animator.state].reset();
     }
     animator.state = stateName;
     animator.player.draw(ctx, stateName, me.x, me.y);
 }
 
-function cameraFollow(){
+function cameraFollow() {
     if (me.x !== currentCoords.x || me.y !== currentCoords.y) {
         let xDifference = (currentCoords.x - me.x);
         let yDifference = (currentCoords.y - me.y);
@@ -230,56 +194,75 @@ function cameraFollow(){
     }
 }
 
-function drawMap() {
-    for (let blockX in data.map) {
-        for (let blockY in data.map[blockX]) {
-            let block = data.map[blockX][blockY];
-            if (block) {
-                ctx.drawImage(images[block.tile], blockX, blockY, 64, 64);
+function drawTiles(Xsize, Ysize, gridSize) {
+    let meX = Math.floor(me.x);
+    let meY = Math.floor(me.y);
+    meX = meX - meX % gridSize;
+    meY = meY - meY % gridSize;
+    let blockX = meX - gridSize * Xsize
+    if (blockX < 0) {
+        blockX = 0;
+    }
+
+    //console.log(blockX + "," + blockY)
+    for (; blockX <= meX + gridSize * Xsize;) {
+        if (data.map[blockX] != null) {
+
+            let blockY = meY - gridSize * Ysize
+            if (blockY < 0) {
+                blockY = 0;
             }
+            for (; blockY <= meY + gridSize * Ysize; blockY += gridSize) {
+                if (data.map[blockX][blockY] != null) {
+
+                    let block = data.map[blockX][blockY];
+                    //console.log("found" + blockX + "," + blockY)
+                    if (block) {
+                        ctx.drawImage(images[block.tile], blockX, blockY, 64, 64);
+                    }
+
+
+                } else {
+                    //              console.log("not found: "+blockX+","+blockY)
+                }
+            }
+
         }
+        blockX += gridSize
     }
 }
+function drawMapFront(Xsize, Ysize, gridSize) {
+    let meX = Math.floor(me.x);
+    let meY = Math.floor(me.y);
+    meX = meX - meX % gridSize;
+    meY = meY - meY % gridSize;
+    let blockX = meX - gridSize * Xsize
+    if (blockX < 0) {
+        blockX = 0;
+    }
+    for (; blockX <= meX + gridSize * Xsize; blockX += gridSize) {
+        if (data.map[blockX] != null) {
 
-function drawTreeMap(){
-    for (let tree in data.treeMap) {
-        let block = data.treeMap[tree];
-        if ((block.name).includes("bush")) {
-            ctx.drawImage(images[block.name], block.x, block.y, 32, 32);
-        } else {
-            ctx.drawImage(images[block.name], block.x, block.y);
+            let blockY = meY - gridSize * Ysize
+            if (blockY < 0) { blockY = 0;}
+            for (; blockY <= meY + gridSize * Ysize; blockY += gridSize) {
+                let block = data.map[blockX][blockY];
+                if (block != null) {
+                    //console.log("found" + blockX + "," + blockY)
+                    if (block.plant != null) {
+                        ctx.drawImage(images[block.plant.name], block.plant.x, block.plant.y, 64, 64);
+                    }
+                    if (block.tree != null) {
+                        ctx.drawImage(images[block.tree.name], block.tree.x, block.tree.y);
+                    }
+                }
+            }
+
         }
-    }
-}
-
-function drawPlayerCollision() {
-    let player = cloneMe(me);
-    let offset = {
-        x:10,
-        y:17,
-        width:14,
-        height:14,
-    }
-    player.x += offset.x
-    player.y += offset.y
-    player.width = offset.width
-    player.height = offset.height
-    ctx.save()
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-    ctx.fillRect(player.x, player.y, player.width, player.height);
-    //ctx.fillStyle = "rgba(255,0,18,0.7)";
-    //ctx.fillRect(me.x, me.y, me.width, me.height);
-    ctx.restore()
-}
-function drawMapCollision(map) {
-    ctx.save()
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-    for (let i = 0; i < map.length; i++) {
-
-        ctx.fillRect(map[i].x, map[i].y, map[i].width, map[i].height);
 
     }
-    ctx.restore()
+
+
 }
 
 ////////////////HTML EVENTS CODE////////////////////////
@@ -293,7 +276,7 @@ function drawMapCollision(map) {
 
 $(window).keydown((key) => {
     keys[key.key] = true;
-    if(key.key === "i"){
+    if (key.key === "i") {
         gameState.inInventory = !gameState.inInventory;
     }
 });
@@ -323,251 +306,7 @@ function loadImagesThenAnimate(folders) {
         requestId = window.requestAnimationFrame(animate);
     });
 }
-//////////////////////Editor//////////////////////////////////
 
-let editorMode = false;
-let rectangles = [];
-let selectedRectangleIndex = -1;
-let mousePosition = {};
-let imageName;
-let timebefore = Date.now();
-let timenow = Date.now();
-
-function editorConfig(){
-    $("#editor").click(()=>{
-        if(!editorMode){
-            $("#editor")[0].innerText = "Game";
-            $("#add")[0].style.display = "block";
-            $("#imagename")[0].style.display = "block";
-            $("#select")[0].style.display = "block";
-            editorMode = true;
-            ctx.clearRect(camera.x,camera.y,cvs.width,cvs.height);
-            camera.set(ctx,0,0);
-            window.cancelAnimationFrame(requestId);
-            requestId = window.requestAnimationFrame(editor);
-        }
-        else{
-            $("#editor")[0].innerText = "Editor";
-            $("#add")[0].style.display = "none";
-            $("#imagename")[0].style.display = "none";
-            $("#select")[0].style.display = "none";
-            editorMode = false;
-            ctx.clearRect(camera.x,camera.y,cvs.width,cvs.height);
-            camera.restore(ctx);
-            window.cancelAnimationFrame(requestId);
-            requestId = window.requestAnimationFrame(animate);
-        }
-    });
-
-    $("#add").click(()=>{
-        addRectangle(camera.x + cvs.width/2 - 50, camera.y + cvs.height / 2 - 50, 100, 100);
-    });
-
-    $("#select").click(()=>{
-        imageName = $("#imagename")[0].value;
-    });
-
-    $("#canvas").click((evt)=>{
-        mousePosition.x = evt.offsetX || evt.layerX;
-        mousePosition.y = evt.offsetY || evt.layerY;
-        checkRectangleIndex(mousePosition.x + camera.x, mousePosition.y + camera.y);
-    });
-}
-
-////////////////////COLLISION///////////////////////////////
-
-function checkCollision2(player, quadTree) {
-    var elements = quadTree.retrieve({
-        x: player.x,
-        y: player.y,
-        width: player.width,
-        height: player.height
-    });
-    return checkCollision(player,elements);
-    if(elements !== null) {
-        return false;
-    }
-    return true;
-}
-
-function move(direction, collisionMap, quadTree,speed) {
-    let player = cloneMe(me);
-    let offset = {
-        x:10,
-        y:17,
-        width:14,
-        height:14,
-    }
-    player.x += offset.x
-    player.y += offset.y
-    player.width = offset.width
-    player.height = offset.height
-    let detail = speed;
-    if (direction === 0) {
-        for (let i = 0; i < collisionMap.length; i++) {
-
-            player.x -= detail;
-            if (checkCollision2(player,quadTree)) {
-                return false;
-            }
-        }
-
-        me.x -= detail;
-    } else if (direction === 1) {
-        for (let i = 0; i < collisionMap.length; i++) {
-
-            player.x += detail;
-            if (checkCollision2(player,quadTree)) {
-                return false;
-            }
-        }
-        me.x += detail;
-    } else if (direction === 2) {
-        for (let i = 0; i < collisionMap.length; i++) {
-
-            player.y += detail;
-            if (checkCollision2(player, quadTree)) {
-                return false;
-            }
-        }
-        me.y += detail;
-    } else if (direction === 3) {
-        for (let i = 0; i < collisionMap.length; i++) {
-
-            player.y -= detail;
-            if (checkCollision2(player, quadTree)) {
-                return false;
-            }
-        }
-        me.y -= detail;
-    }
-    return true;
-}
-
-function checkCollision(me, objects) {
-
-    for (let i = 0; i < objects.length ; i++) {
-       let object = objects[i];
-       if (me.x < object.x + object.width &&
-            me.x + me.width > object.x &&
-            me.y < object.y + object.height &&
-            me.y + me.height > object.y) {
-            return true;
-            // collision detected!
-        }
-    }
-    return false;
-
-}
-function cloneMe(me) {
-    let player ={
-        x:me.x,
-        y:me.y,
-        width:me.width,
-        height:me.height
-    }
-    return player
-}
-
-function editor(){
-    updateEditor();
-    requestId = requestAnimationFrame(editor);
-}
-
-function updateEditor(){
-    timenow = Date.now();
-    if(timenow - timebefore > 30){
-        timebefore = timenow;
-        if(selectedRectangleIndex != -1){
-            let r = rectangles[selectedRectangleIndex];
-            if(keys["w"]){
-                rectangles[selectedRectangleIndex].y--;
-            }
-            if(keys["s"]){
-                rectangles[selectedRectangleIndex].y++;
-            }
-            if(keys["a"]){
-                rectangles[selectedRectangleIndex].x--;
-            }
-            if(keys["d"]){
-                rectangles[selectedRectangleIndex].x++;
-            }
-            if(keys["ArrowUp"] && r.h > 5){
-                rectangles[selectedRectangleIndex].h--;
-            }
-            if(keys["ArrowDown"]){
-                rectangles[selectedRectangleIndex].h++;
-            }
-            if(keys["ArrowLeft"] && r.w > 5){
-                rectangles[selectedRectangleIndex].w--;
-            }
-            if(keys["ArrowRight"]){
-                rectangles[selectedRectangleIndex].w++;
-            }
-            if(keys["x"]){
-                rectangles.splice(selectedRectangleIndex,1);
-                selectedRectangleIndex = -1;
-            }
-            if(keys["p"]){
-                let message = {name:imageName,rectangles:[]};
-                for (let rectangle in rectangles){
-                    let r = rectangles[rectangle];
-                    let xOffset = r.x - (camera.x + cvs.width / 2);
-                    let yOffset = r.y - (camera.y + cvs.height / 2);
-                    message.rectangles.push({x:xOffset, y:yOffset, width:r.w, height:r.h})
-                }
-                console.log(message);
-                //alert(JSON.stringify(message))
-                socket.emit("updatecollision",message);
-            }
-        }
-    }
-    ctx.clearRect(camera.x,camera.y,cvs.width,cvs.height);
-    if(imageName){
-        try{
-            ctx.drawImage(images[imageName], camera.x + cvs.width / 2, camera.y + cvs.height / 2);
-            ctx.beginPath();
-            ctx.rect(camera.x + cvs.width / 2, camera.y + cvs.height / 2, images[imageName].width, images[imageName].height);
-            ctx.stroke();
-        }catch (e) {
-
-        }
-
-    }
-    for (let rectangle in rectangles){
-        let r = rectangles[rectangle];
-        if(rectangle == selectedRectangleIndex){
-            ctx.strokeStyle = "yellow";
-            ctx.beginPath();
-            ctx.rect(r.x, r.y, r.w, r.h);
-            ctx.stroke();
-            ctx.strokeStyle = "black"
-        }
-        ctx.beginPath();
-        ctx.rect(r.x, r.y, r.w, r.h);
-        ctx.stroke();
-    }
-}
-
-function addRectangle(x, y, w, h){
-    rectangles.push(new Rectangle(x, y, w, h));
-}
-
-function checkRectangleIndex(x, y){
-    for(let rectangle in rectangles){
-        let r = rectangles[rectangle];
-        if(x > r.x && x < r.x + r.w && y > r.y && y < r.y + r.h){
-            selectedRectangleIndex = rectangle;
-            return;
-        }
-    }
-}
-
-class Rectangle{
-    constructor(x, y, w, h) {
-        this.x = x;
-        this.y = y;
-        this.w = w;
-        this.h = h;
-    }
+export {
+    animate
 }

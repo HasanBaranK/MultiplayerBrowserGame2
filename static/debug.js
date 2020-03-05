@@ -1,3 +1,38 @@
+////////////////NEW DEBUG CODE //////////////////////////////////
+
+function drawPlayerCollision() {
+    let player = cloneMe(me);
+    let offset = {
+        x: 10,
+        y: 17,
+        width: 14,
+        height: 14,
+    }
+    player.x += offset.x
+    player.y += offset.y
+    player.width = offset.width
+    player.height = offset.height
+    ctx.save()
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+    //ctx.fillStyle = "rgba(255,0,18,0.7)";
+    //ctx.fillRect(me.x, me.y, me.width, me.height);
+    ctx.restore()
+}
+
+function drawMapCollision(map) {
+    ctx.save()
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    for (let i = 0; i < map.length; i++) {
+
+        ctx.fillRect(map[i].x, map[i].y, map[i].width, map[i].height);
+
+    }
+    ctx.restore()
+}
+
+////////////////OLD DEBUG CODE //////////////////////////////////
+// old code from old browser game
 function drawPlayerPosition(players) {
     ctx.save()
     ctx.fillStyle = "rgba(240, 52, 52, 1)";
@@ -6,7 +41,6 @@ function drawPlayerPosition(players) {
     }
     ctx.restore()
 }
-
 function visualizeHitBoxes(players,gridSize) {
     ctx.save()
     ctx.fillStyle = "rgba(240, 52, 52, 1)";
@@ -98,21 +132,6 @@ function visualizeCollision2(players, gridSize) {
 
 
 }
-
-function drawMapCollision(map) {
-    ctx.save()
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-    for (let block in map) {
-        for (let insideBlock in map[block]) {
-            if (map[block][insideBlock]) {
-                ctx.fillRect(block, insideBlock, 32, 32);
-            }
-        }
-
-    }
-    ctx.restore()
-}
-
 function rangeVisualizer(players, range) {
     ctx.save()
     ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
@@ -126,14 +145,6 @@ function rangeVisualizer(players, range) {
         if (player.facing === "right") {
             ctx.fillRect(player.state.x + ( player.state.sizex *0.5), player.state.y, range, 2 * player.state.sizey);
         }
-    }
-    ctx.restore()
-}
-function visualizeHitBoxes(players,gridSize) {
-    ctx.save()
-    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-    for(let player in players){
-        ctx.fillRect(player.x, player.y, player.x + player.sizex, player.y + player.sizey);
     }
     ctx.restore()
 }
@@ -209,7 +220,6 @@ function visualizeCollision(players, gridSize) {
         ctx.fillRect(MINX, MINY, MAXX - MINX, MAXY - MINY);
     }
 }
-
 function visualizeCollisionItems(items, gridSize) {
     for (let item in items) {
         items = items[item]
@@ -267,7 +277,6 @@ function visualizeCollisionItems(items, gridSize) {
         ctx.fillRect(MINX, MINY, MAXX - MINX, MAXY - MINY);
     }
 }
-
 function whichGridIamOn(x, y, gridSize) {
     console.log(x + "," + y)
     ctx.save()
@@ -304,85 +313,8 @@ function buildRange(players, gridSize) {
     ctx.fill();
     ctx.restore()
 }
-
-function visualizeCollision(players, gridSize) {
-  for (let player in players) {
-    player = players[player]
-    let sizex = player.state.sizex
-    let sizey = player.state.sizey
-
-
-
-    let xcoordinate = player.state.x + sizex;
-    let ycoordinate = player.state.y + sizey;
-
-
-    let MAXX;
-    let MINX;
-    let MAXY;
-    let MINY;
-    if (xcoordinate > 0 && ycoordinate > 0) {
-      if (ycoordinate < gridSize) {
-        MAXY = ycoordinate + sizey + (gridSize - ((ycoordinate + sizey) % gridSize));
-        MINY = ycoordinate - sizey - ((ycoordinate - sizey) % gridSize);
-      } else {
-        MAXY = ycoordinate + sizey + (gridSize - ((ycoordinate + sizey) % gridSize));
-        MINY = ycoordinate - sizey - ((ycoordinate - sizey) % gridSize) + gridSize;
-      }
-      MAXX = xcoordinate + sizex + (gridSize - ((xcoordinate + sizex) % gridSize)) - gridSize;
-      MINX = xcoordinate - sizex - ((xcoordinate - sizex) % gridSize) + gridSize;
-
-    } else if (xcoordinate > 0 && ycoordinate <= 0) {
-
-      console.log(ycoordinate)
-      MAXX = xcoordinate + sizex + (gridSize - ((xcoordinate + sizex) % gridSize)) - gridSize;
-      MINX = xcoordinate - sizex - ((xcoordinate - sizex) % gridSize) + gridSize;
-
-      if ((-gridSize) < ycoordinate) {
-        MAXY = ycoordinate + sizey + (gridSize - ((ycoordinate + sizey) % gridSize));
-        MINY = ycoordinate - sizey - ((ycoordinate - sizey) % gridSize);
-      } else {
-        MAXY = ycoordinate + sizey + (gridSize - ((ycoordinate + sizey) % gridSize)) - gridSize;
-        MINY = ycoordinate - sizey - ((ycoordinate - sizey) % gridSize);
-      }
-    } else if (xcoordinate < 0 && ycoordinate > 0) {
-      MAXX = xcoordinate + sizex + (gridSize - ((xcoordinate + sizex) % gridSize)) - gridSize - gridSize;
-      MINX = xcoordinate - sizex - ((xcoordinate - sizex) % gridSize);
-      MAXY = ycoordinate + sizey + (gridSize - ((ycoordinate + sizey) % gridSize));
-      MINY = ycoordinate - sizey - ((ycoordinate - sizey) % gridSize) + gridSize;
-    } else if (xcoordinate < 0 && ycoordinate < 0) {
-      MAXX = xcoordinate + sizex + (gridSize - ((xcoordinate + sizex) % gridSize)) - gridSize - gridSize;
-      MINX = xcoordinate - sizex - ((xcoordinate - sizex) % gridSize);
-      MAXY = ycoordinate + sizey + (gridSize - ((ycoordinate + sizey) % gridSize)) - gridSize;
-      MINY = ycoordinate - sizey - ((ycoordinate - sizey) % gridSize);
-    } else {
-      MAXX = xcoordinate + sizex + (gridSize - ((xcoordinate + sizex) % gridSize)) - gridSize;
-      MINX = xcoordinate - sizex - ((xcoordinate - sizex) % gridSize) + gridSize;
-      MAXY = ycoordinate + sizey + (gridSize - ((ycoordinate + sizey) % gridSize));
-      MINY = ycoordinate - sizey - ((ycoordinate - sizey) % gridSize);
-
-    }
-
-    if (MAXX === MINX) {
-      MAXX = MAXX + gridSize
-    }
-    // if(MAXY -32 === MINY ){
-    //   MINY = MINY -32;
-    // }
-    //
-    // console.log("X")
-    // console.log(MAXX)
-    // console.log(MINX)
-    // console.log("Y")
-    // console.log(MAXY)
-    // console.log(MINY)
-    ctx.fillRect(MINX, MINY, MAXX - MINX, MAXY - MINY);
-    ctx.beginPath();
-    ctx.fillStyle="red";
-    ctx.arc(xcoordinate, ycoordinate, 10, 0, 2 * Math.PI);
-    ctx.fillStyle="green";
-    ctx.arc(player.state.x, player.state.y, 10, 0, 2 * Math.PI);
-    ctx.fill();
-    ctx.fillStyle="black";
-  }
+//old code finish
+export {
+    drawPlayerCollision,
+    drawMapCollision
 }

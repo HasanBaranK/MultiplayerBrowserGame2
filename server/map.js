@@ -31,14 +31,8 @@ function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSiz
 
         }
     }
-    var myTree = new Quadtree({
-        x: 0,
-        y: 0,
-        width: 400,
-        height: 300
-    }, 10, 4);
     //Trees
-    amountOfTrees = Math.floor(Math.random() * Math.floor((amountOfBlocks / 15))) + 1;
+    amountOfTrees = Math.floor(Math.random() * Math.floor((amountOfBlocks / 2))) + 1;
     let amountOfRocks = Math.floor(Math.random() * Math.floor((amountOfBlocks / 15)))*2 + 1;
 
     console.log("generated trees amount :" + amountOfTrees);
@@ -59,12 +53,13 @@ function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSiz
                 let randTree = Math.floor(Math.random()*6)+1;
 
                 let treeName= "tree-" + randTree
-                map[treeX][treeY].tree = treeName;
                 let tree = {
                     name:treeName,
                     x:treeX,
                     y:treeY,
                 }
+                map[treeX][treeY].tree = tree;
+
                 treeMap.push(tree);
 
                 //if (!collisionMap[treeX]) collisionMap[treeX] = [];
@@ -115,12 +110,13 @@ function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSiz
                     continue;
                 }else {
                 let randRock = Math.floor(Math.random() * 4) + 1;
-                map[treeX][treeY].plant = "bush";
-                let rock = {
-                    name: "bush-" + randRock,
-                    x: treeX,
-                    y: treeY,
-                }
+                    let rock = {
+                        name: "bush-" + randRock,
+                        x: treeX,
+                        y: treeY,
+                    }
+                map[treeX][treeY].plant = rock;
+
                 treeMap.push(rock);
 
                 }
