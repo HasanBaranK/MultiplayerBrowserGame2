@@ -108,5 +108,6 @@ function cloneMe(me) {
 export {
     checkCollision,
     move,
-    initializeQuadTree
+    initializeQuadTree,
+    quadTreeObjectsByPosition
 }

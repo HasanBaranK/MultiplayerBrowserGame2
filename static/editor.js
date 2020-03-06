@@ -1,6 +1,6 @@
-import {animate} from "./index.js"
-//////////////////////Editor//////////////////////////////////
 
+//////////////////////Editor//////////////////////////////////
+/*
 let editorMode = false;
 let rectangles = [];
 let selectedRectangleIndex = -1;
@@ -8,8 +8,11 @@ let mousePosition = {};
 let imageName;
 let timebefore = Date.now();
 let timenow = Date.now();
+let ctx;
+let cvs;
+let camera;
 
-function editorConfig(ctx,camera,requestId) {
+function editorConfig() {
     $("#editor").click(() => {
         if (!editorMode) {
             $("#editor")[0].innerText = "Game";
@@ -49,7 +52,7 @@ function editorConfig(ctx,camera,requestId) {
     });
 }
 
-function editor(requestId) {
+function editor() {
     updateEditor();
     requestId = requestAnimationFrame(editor);
 }
@@ -156,3 +159,4 @@ export {
     editor,
 
 }
+*/

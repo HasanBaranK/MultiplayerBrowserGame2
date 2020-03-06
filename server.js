@@ -1,3 +1,4 @@
+
 let path = require('path');
 let socketIO = require('socket.io');
 let express = require('express');
@@ -15,8 +16,8 @@ app.use(express.static(static_dir));
 const imageFolder = './static/images';
 
 let mapFunctions = require("./server/map.js");
-let collisionFunctions = require("./server/collision.js");
 let timeFunctions = require("./server/time.js");
+let hitCheckFunctions = require("./server/hitCheck.js");
 
 let gridSizeX =64;
 let gridSizeY =64;
@@ -25,12 +26,12 @@ let rawdata = fs.readFileSync("server/collisions.json");
 let rectangles = JSON.parse(rawdata);
 
 //generate Map
-let maps = mapFunctions.generateMap(0,0,3000,3000,"Forest",gridSizeX,gridSizeY,rectangles)
+let maps = mapFunctions.generateMap(0,0,1000,1000,"Forest",gridSizeX,gridSizeY,rectangles)
 let map = maps.map
 let collisionMap = maps.collisionMap
 let treeMap = maps.treeMap
 let quadtree = maps.quadtree
-
+let projectiles = []
 //game time
 let gameTime = 0;
 var players = {};
@@ -92,7 +93,11 @@ io.on('connection', function (socket) {
         socket.join('players');
         console.log("Player joined");
         socket.emit("joined","success");
-        socket.emit("players",players);
+        let obj = {
+            gameTime: gameTime,
+            players: players,
+        };
+        socket.emit("players",obj);
     });
     socket.on('getimages', function (click) {
         socket.emit('images', images);
@@ -127,13 +132,26 @@ io.on('connection', function (socket) {
 
     });
     socket.on('players', function (data){
-        socket.emit("players",players);
+        let obj = {
+            gameTime: gameTime,
+            players: players,
+        };
+        socket.emit("players",obj);
+    });
+    socket.on('projectile', function (projectile){
+        projectiles.push(projectile);
+        let obj = {
+            projectile: projectile,
+            gameTime: gameTime,
+        }
+        io.emit("projectile",obj);
     });
 })
 ;
 
 function movePlayer(player, data, speed) {
     if (data == null) {
+        //console.log("data null")
         return
     }
     let d = new Date();
@@ -160,6 +178,6 @@ function movePlayers(players) {
 }
 setInterval(function () {
     movePlayers(players);
-
-    gameTime = timeFunctions.updateGameTime(gameTime, 600)
+    gameTime = timeFunctions.updateGameTime(gameTime, 1)
+    hitCheckFunctions.calculateAllProjectiles(projectiles,gameTime,players);
 }, 1000/60);

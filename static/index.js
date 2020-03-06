@@ -6,10 +6,12 @@ let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promis
 let camera = new Camera(0, 0, 0);
 let requestId;
 let quadTree = {};
+let projectiles = [];
+let gameTime = 0;
 import {Camera, Player, Inventory} from "./classes.js";
 import {initializeQuadTree,move} from "./collision.js";
-import {editorConfig} from "./editor.js";
-import {drawPlayerCollision,drawMapCollision} from "./debug.js";
+import {drawPlayerCollision} from "./debug.js";
+import {calculateAllProjectiles,createProjectile} from "./projectiles.js";
 
 $(document).ready(init);
 
@@ -19,7 +21,7 @@ function init() {
     cvs = $("#canvas")[0];
     ctx = cvs.getContext("2d");
 
-    editorConfig(ctx,camera,requestId);
+    editorConfig(ctx,cvs,camera,requestId);
     configure();
 
     socket = io.connect('http://localhost:5000');
@@ -27,7 +29,7 @@ function init() {
         socket.emit("getimages", {});
         socket.on("data", (res) => {
             data = res;
-            console.log(data.map)
+            gameTime = res.gameTime
             quadTree = initializeQuadTree(quadTree,data.collisionMap);
             //quadTree = data.quadtree;
             socket.emit("newplayer", {});
@@ -40,8 +42,16 @@ function init() {
             loadImagesThenAnimate(imageNames);
             console.log("joined game");
         });
+        socket.on("projectile", (res) => {
+            //console.log("received from server")
+            //console.log(res)
+            gameTime = res.gameTime;
+            projectiles.push(res.projectile)
+
+        });
         socket.on("players", (res) => {
-            players = res;
+            players = res.players;
+            gameTime = res.gameTime;
 
 
             if (me === undefined) {
@@ -102,17 +112,20 @@ function update() {
     //drawMapBack(14, 16, 64);
     drawPlayer();
     drawMapFront(14, 16, 64);
+    calculateAllProjectiles(projectiles,gameTime,quadTree,players)
     for (let ui in uis) {
         uis[ui].draw(ctx, camera);
     }
     //Debug
     //drawPlayerCollision()
-    //drawMapCollision(data.collisionMap)
+    drawMapCollision(data.collisionMap)
 }
 
 setInterval(function () {
     doTheMovement();
-}, 20);
+    gameTime = updateGameTime(gameTime,1);
+
+}, 1000/60);
 
 function doTheMovement() {
     let locationChanged = false;
@@ -176,6 +189,7 @@ function drawPlayer() {
     }
 }
 
+
 function animationChecker(stateName) {
     if (animator.state !== stateName) {
         animator.player.animations[animator.state].reset();
@@ -193,6 +207,16 @@ function cameraFollow() {
         currentCoords.y = me.y;
     }
 }
+function printMousePos(event) {
+   /*console.log(
+        "clientX: " + (event.clientX+camera.x) +
+        " - clientY: " + (event.clientY+camera.y));
+   console.log(currentCoords.x,currentCoords.y);
+   console.log(currentCoords.x,currentCoords.y);*/
+   createProjectile(projectiles,"arrow2",me.x,me.y,me.x,me.y,event.clientX+camera.x,event.clientY+camera.y,10 ,quadTree,players,gameTime)
+}
+
+document.getElementById("canvas").addEventListener("click", printMousePos);
 
 function drawTiles(Xsize, Ysize, gridSize) {
     let meX = Math.floor(me.x);
@@ -306,7 +330,194 @@ function loadImagesThenAnimate(folders) {
         requestId = window.requestAnimationFrame(animate);
     });
 }
+function updateGameTime(gameTime,speed) {
+    gameTime = gameTime + speed;
+    return gameTime
+}
+function sendProjectileServer(projectile) {
+    //console.log("Sending to server")
+    //console.log(projectile)
+    socket.emit("projectile",projectile)
+}
+function drawImageRotation(image, x, y, scale, rotation,sin,cos) {
+    ctx.save()
+    ctx.translate(x, y)
+    //ctx.rotate(-projectiles[projectile].angle)
+    //ctx.setTransform(scale, 0, 0, scale, x, y); // sets scale and origin
+    //ctx.rotate(Math.atan(rotation));
+    ctx.drawImage(images[image],0,0);
+    ctx.restore()
+    ctx.save()
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
 
+    //ctx.rotate(Math.atan(rotation));
+    ctx.fillRect(x+16, y+9, 7, 5);
+
+    ctx.restore()
+}
+//////////////////////Editor//////////////////////////////////
+
+let editorMode = false;
+let rectangles = [];
+let selectedRectangleIndex = -1;
+let mousePosition = {};
+let imageName;
+let timebefore = Date.now();
+let timenow = Date.now();
+
+function editorConfig() {
+    $("#editor").click(() => {
+        if (!editorMode) {
+            $("#editor")[0].innerText = "Game";
+            $("#add")[0].style.display = "block";
+            $("#imagename")[0].style.display = "block";
+            $("#select")[0].style.display = "block";
+            editorMode = true;
+            ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
+            camera.set(ctx, 0, 0);
+            window.cancelAnimationFrame(requestId);
+            requestId = window.requestAnimationFrame(editor);
+        } else {
+            $("#editor")[0].innerText = "Editor";
+            $("#add")[0].style.display = "none";
+            $("#imagename")[0].style.display = "none";
+            $("#select")[0].style.display = "none";
+            editorMode = false;
+            ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
+            camera.restore(ctx);
+            window.cancelAnimationFrame(requestId);
+            requestId = window.requestAnimationFrame(animate);
+        }
+    });
+
+    $("#add").click(() => {
+        addRectangle(camera.x + cvs.width / 2 - 50, camera.y + cvs.height / 2 - 50, 100, 100);
+    });
+
+    $("#select").click(() => {
+        imageName = $("#imagename")[0].value;
+    });
+
+    $("#canvas").click((evt) => {
+        mousePosition.x = evt.offsetX || evt.layerX;
+        mousePosition.y = evt.offsetY || evt.layerY;
+        checkRectangleIndex(mousePosition.x + camera.x, mousePosition.y + camera.y);
+    });
+}
+
+function editor() {
+    updateEditor();
+    requestId = requestAnimationFrame(editor);
+}
+
+function updateEditor() {
+    timenow = Date.now();
+    if (timenow - timebefore > 30) {
+        timebefore = timenow;
+        if (selectedRectangleIndex != -1) {
+            let r = rectangles[selectedRectangleIndex];
+            if (keys["w"]) {
+                rectangles[selectedRectangleIndex].y--;
+            }
+            if (keys["s"]) {
+                rectangles[selectedRectangleIndex].y++;
+            }
+            if (keys["a"]) {
+                rectangles[selectedRectangleIndex].x--;
+            }
+            if (keys["d"]) {
+                rectangles[selectedRectangleIndex].x++;
+            }
+            if (keys["ArrowUp"] && r.h > 5) {
+                rectangles[selectedRectangleIndex].h--;
+            }
+            if (keys["ArrowDown"]) {
+                rectangles[selectedRectangleIndex].h++;
+            }
+            if (keys["ArrowLeft"] && r.w > 5) {
+                rectangles[selectedRectangleIndex].w--;
+            }
+            if (keys["ArrowRight"]) {
+                rectangles[selectedRectangleIndex].w++;
+            }
+            if (keys["x"]) {
+                rectangles.splice(selectedRectangleIndex, 1);
+                selectedRectangleIndex = -1;
+            }
+            if (keys["p"]) {
+                let message = {name: imageName, rectangles: []};
+                for (let rectangle in rectangles) {
+                    let r = rectangles[rectangle];
+                    let xOffset = r.x - (camera.x + cvs.width / 2);
+                    let yOffset = r.y - (camera.y + cvs.height / 2);
+                    message.rectangles.push({x: xOffset, y: yOffset, width: r.w, height: r.h})
+                }
+                console.log(message);
+                //alert(JSON.stringify(message))
+                socket.emit("updatecollision", message);
+            }
+        }
+    }
+    ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
+    if (imageName) {
+        try {
+            ctx.drawImage(images[imageName], camera.x + cvs.width / 2, camera.y + cvs.height / 2);
+            ctx.beginPath();
+            ctx.rect(camera.x + cvs.width / 2, camera.y + cvs.height / 2, images[imageName].width, images[imageName].height);
+            ctx.stroke();
+        } catch (e) {
+
+        }
+
+    }
+    for (let rectangle in rectangles) {
+        let r = rectangles[rectangle];
+        if (rectangle == selectedRectangleIndex) {
+            ctx.strokeStyle = "yellow";
+            ctx.beginPath();
+            ctx.rect(r.x, r.y, r.w, r.h);
+            ctx.stroke();
+            ctx.strokeStyle = "black"
+        }
+        ctx.beginPath();
+        ctx.rect(r.x, r.y, r.w, r.h);
+        ctx.stroke();
+    }
+}
+
+function addRectangle(x, y, w, h) {
+    rectangles.push(new Rectangle(x, y, w, h));
+}
+
+function checkRectangleIndex(x, y) {
+    for (let rectangle in rectangles) {
+        let r = rectangles[rectangle];
+        if (x > r.x && x < r.x + r.w && y > r.y && y < r.y + r.h) {
+            selectedRectangleIndex = rectangle;
+            return;
+        }
+    }
+}
+function drawMapCollision(map) {
+    ctx.save()
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    for (let i = 0; i < map.length; i++) {
+
+        ctx.fillRect(map[i].x, map[i].y, map[i].width, map[i].height);
+
+    }
+    ctx.restore()
+}
+class Rectangle {
+    constructor(x, y, w, h) {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+    }
+}
 export {
-    animate
+    animate,
+    sendProjectileServer,
+    drawImageRotation
 }

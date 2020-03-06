@@ -1,8 +1,7 @@
 module.exports = {
     updateGameTime,
-    getGameTime
 }
-
+/*
 function updateGameTime(gameTime,speed) {
     gameTime = gameTime + speed;
     gameTime = gameTime % (5184000)//60*60*60*24
@@ -21,4 +20,9 @@ function getGameTime(gameTime) {
     }
 
     return time
+}
+*/
+function updateGameTime(gameTime,speed) {
+    gameTime = gameTime + speed;
+    return gameTime
 }
