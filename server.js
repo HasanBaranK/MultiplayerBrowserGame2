@@ -146,6 +146,9 @@ io.on('connection', function (socket) {
         }
         io.emit("projectile",obj);
     });
+    socket.on('disconnect', function(evt){
+       delete players[socket.id];
+    });
 })
 ;
 

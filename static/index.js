@@ -118,6 +118,7 @@ function update() {
     }
     //Debug
     //drawPlayerCollision()
+    drawPlayers();
     drawMapCollision(data.collisionMap)
 }
 
@@ -186,6 +187,16 @@ function drawPlayer() {
         animationChecker("runRIGHT");
     } else {
         animationChecker("idle");
+    }
+}
+
+function drawPlayers(){
+    console.log(players);
+    for (let playerIndex in players){
+        let player = players[playerIndex];
+        if(playerIndex !== socket.id){
+            ctx.drawImage(images["idle"], 0, 0, 32, 32, player.x, player.y, 32, 32);
+        }
     }
 }
 
