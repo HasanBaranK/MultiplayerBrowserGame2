@@ -18,6 +18,7 @@ const imageFolder = './static/images';
 let mapFunctions = require("./server/map.js");
 let timeFunctions = require("./server/time.js");
 let hitCheckFunctions = require("./server/hitCheck.js");
+let collisionFunctions = require("./server/collision.js");
 
 let gridSizeX =64;
 let gridSizeY =64;
@@ -38,7 +39,7 @@ var players = {};
 
 let images = {};
 images = getImages(images)
-
+quadtree = collisionFunctions.initializeQuadTree(quadtree,collisionMap);
 
 function getImages(images) {
     fs.readdir(imageFolder, (err, files) => {
@@ -139,11 +140,14 @@ io.on('connection', function (socket) {
         socket.emit("players",obj);
     });
     socket.on('projectile', function (projectile){
-        projectiles.push(projectile);
+
+        projectile.origin = socket.id;
+
         let obj = {
             projectile: projectile,
             gameTime: gameTime,
         }
+        projectiles.push(projectile);
         io.emit("projectile",obj);
     });
     socket.on('disconnect', function(evt){
@@ -182,5 +186,5 @@ function movePlayers(players) {
 setInterval(function () {
     movePlayers(players);
     gameTime = timeFunctions.updateGameTime(gameTime, 1)
-    hitCheckFunctions.calculateAllProjectiles(projectiles,gameTime,players);
+    hitCheckFunctions.calculateAllProjectiles(projectiles,gameTime,players,quadtree);
 }, 1000/60);

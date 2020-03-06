@@ -1,9 +1,10 @@
 //server side
+let collisionFunctions = require("./collision.js");
 module.exports = {
     calculateAllProjectiles
 }
 
-function calculateAllProjectiles(projectiles, currentGameTime, players) {
+function calculateAllProjectiles(projectiles, currentGameTime, players,quadTree) {
 
     for (let i = 0; i < projectiles.length; i++) {
         let projectile = projectiles[i];
@@ -47,7 +48,14 @@ function calculateAllProjectiles(projectiles, currentGameTime, players) {
                 width: 7,
                 height: 5,
             }
-            let object = checkIfHitPlayer(obj, players)
+            let objects = collisionFunctions.quadTreeObjectsByPosition(obj, quadTree);
+            let object = collisionFunctions.checkCollision(obj, objects)
+            if (object !== false) {
+                projectiles.splice(i, 1);
+                console.log("hit");
+                continue;
+            }
+            object = checkIfHitPlayer(obj, players,projectile.origin)
             //console.log(object)
             if (object !== false) {
                 projectiles.splice(i, 1);
@@ -69,11 +77,31 @@ function calculateAllProjectiles(projectiles, currentGameTime, players) {
         //drawImageRotation(projectile.name, Math.floor(currentX), Math.floor(currentY), 1, projectile.sin/projectile.cos);
     }
 }
-
-function checkIfHitPlayer(projectile, players) {
+function cloneMe(me) {
+    return {
+        x: me.x,
+        y: me.y,
+        width: me.width,
+        height: me.height
+    }
+}
+function checkIfHitPlayer(projectile, players,origin) {
 
     for (let key in players) {
-        let object = players[key]
+        if(key === origin){
+            continue
+        }
+        let object = cloneMe(players[key])
+        let offset = {
+            x: 10,
+            y: 17,
+            width: 14,
+            height: 14,
+        }
+        object.x += offset.x
+        object.y += offset.y
+        object.width = offset.width
+        object.height = offset.height
         if (projectile.x < object.x + object.width &&
             projectile.x + projectile.width > object.x &&
             projectile.y < object.y + object.height &&

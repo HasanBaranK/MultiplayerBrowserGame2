@@ -28,7 +28,8 @@ function makeProjectileObject(projectiles, name, startX, startY, cos, sin, power
         cos: cos,
         sin: sin,
         power: power,
-        gameTimeFire: gameTimeFire
+        gameTimeFire: gameTimeFire,
+        origin: "",
     }
     return Projectile;
 }
@@ -89,16 +90,16 @@ function calculateAllProjectiles(projectiles, currentGameTime, quadTree,players)
                 console.log("hit");
                 continue;
             }
-            object = checkIfHitPlayer(obj, players)
+            object = checkIfHitPlayer(obj, players,projectile.origin)
             //console.log(object)
             if (object !== false) {
                 projectiles.splice(i, 1);
                 console.log("hit");
-                object.health -= 10;
-                if (object.health <= 0) {
-                    object.isDead = true;
-                    console.log("dead")
-                }
+                // object.health -= 10;
+                // if (object.health <= 0) {
+                //     object.isDead = true;
+                //     console.log("dead")
+                // }
                 continue;
             }
             drawImageRotation(projectile.name, x, y, 1, projectile.sin / projectile.cos, projectile.sin, projectile.cos);
@@ -126,10 +127,23 @@ function moveProjectile(name, x, y, degree, power, time) {
     drawImageRotation(name, currentX, currentY, 1, degree);
 }
 
-function checkIfHitPlayer(projectile, players) {
+function checkIfHitPlayer(projectile, players,origin) {
 
     for (let key in players) {
-        let object = players[key]
+        if(key === origin){
+            continue
+        }
+        let object = cloneMe(players[key])
+        let offset = {
+            x: 10,
+            y: 17,
+            width: 14,
+            height: 14,
+        }
+        object.x += offset.x
+        object.y += offset.y
+        object.width = offset.width
+        object.height = offset.height
         if (projectile.x < object.x + object.width &&
             projectile.x + projectile.width > object.x &&
             projectile.y < object.y + object.height &&
@@ -140,6 +154,14 @@ function checkIfHitPlayer(projectile, players) {
     }
 
     return false;
+}
+function cloneMe(me) {
+    return {
+        x: me.x,
+        y: me.y,
+        width: me.width,
+        height: me.height
+    }
 }
 export {
     calculateAllProjectiles,

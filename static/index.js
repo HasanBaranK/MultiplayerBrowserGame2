@@ -9,8 +9,7 @@ let quadTree = {};
 let projectiles = [];
 let gameTime = 0;
 import {Camera, Player, Inventory} from "./classes.js";
-import {initializeQuadTree,move} from "./collision.js";
-import {drawPlayerCollision} from "./debug.js";
+import {initializeQuadTree,move,cloneMe} from "./collision.js";
 import {calculateAllProjectiles,createProjectile} from "./projectiles.js";
 
 $(document).ready(init);
@@ -117,9 +116,11 @@ function update() {
         uis[ui].draw(ctx, camera);
     }
     //Debug
+
     //drawPlayerCollision()
     drawPlayers();
-    drawMapCollision(data.collisionMap)
+    //drawMapCollision(data.collisionMap)
+    //drawPlayerCollision()
 }
 
 setInterval(function () {
@@ -191,7 +192,6 @@ function drawPlayer() {
 }
 
 function drawPlayers(){
-    console.log(players);
     for (let playerIndex in players){
         let player = players[playerIndex];
         if(playerIndex !== socket.id){
@@ -355,7 +355,14 @@ function drawImageRotation(image, x, y, scale, rotation,sin,cos) {
     ctx.translate(x, y)
     //ctx.rotate(-projectiles[projectile].angle)
     //ctx.setTransform(scale, 0, 0, scale, x, y); // sets scale and origin
-    //ctx.rotate(Math.atan(rotation));
+    if(Math.asin(sin) <0){
+        ctx.rotate(-Math.acos(cos));
+    } else {
+        ctx.rotate(Math.acos(cos));
+    }
+    /*console.log("arccos: "+radians_to_degrees(Math.acos(cos)));
+    console.log("arcsin: "+radians_to_degrees(Math.asin(sin)));
+    console.log("arctan: "+radians_to_degrees(Math.atan(sin/cos)));*/
     ctx.drawImage(images[image],0,0);
     ctx.restore()
     ctx.save()
@@ -365,6 +372,11 @@ function drawImageRotation(image, x, y, scale, rotation,sin,cos) {
     ctx.fillRect(x+16, y+9, 7, 5);
 
     ctx.restore()
+}
+function radians_to_degrees(radians)
+{
+    var pi = Math.PI;
+    return radians * (180/pi);
 }
 //////////////////////Editor//////////////////////////////////
 
@@ -507,6 +519,30 @@ function checkRectangleIndex(x, y) {
             selectedRectangleIndex = rectangle;
             return;
         }
+    }
+}
+function drawPlayerCollision() {
+    for (let key in players) {
+        if (key === origin) {
+            continue
+        }
+        let player = cloneMe(players[key]);
+        let offset = {
+            x: 10,
+            y: 17,
+            width: 14,
+            height: 14,
+        }
+        player.x += offset.x
+        player.y += offset.y
+        player.width = offset.width
+        player.height = offset.height
+        ctx.save()
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+        //ctx.fillStyle = "rgba(255,0,18,0.7)";
+        //ctx.fillRect(me.x, me.y, me.width, me.height);
+        ctx.restore()
     }
 }
 function drawMapCollision(map) {

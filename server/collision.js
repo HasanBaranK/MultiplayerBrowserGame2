@@ -1,3 +1,5 @@
+
+const Quadtree = require('./quadtree.min.js');
 ////////////////////QUAD TREE///////////////////////////////
 function initializeQuadTree(quadTree,collisionMap) {
     quadTree = new Quadtree({
@@ -105,10 +107,9 @@ function cloneMe(me) {
         height: me.height
     }
 }
-export {
+module.exports = {
     checkCollision,
     move,
     initializeQuadTree,
-    quadTreeObjectsByPosition,
-    cloneMe
+    quadTreeObjectsByPosition
 }
