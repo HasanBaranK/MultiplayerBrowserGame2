@@ -1,0 +1,227 @@
+// for node.js
+//import * as EasyStar from "easystarjs";
+
+var PF = require('pathfinding');
+
+function createMob(x, y, width, height, target, matrix) {
+
+    let mob = {
+
+        x: x,
+        y: y,
+        width: width,
+        height: height,
+        matrix: matrix,
+        path: null,
+        speed: 10,
+    }
+
+    return mob
+}
+
+function initializePathFinder(matrix) {
+    let grid = new PF.Grid(matrix);
+    return grid;
+}
+
+function findClosestTarget(mob, players, searchDistance) {
+
+    let target = {
+        x: null,
+        y: null,
+    }
+    let distanceSmallest = null
+    for (let key in players) {
+
+        let object = players[key]
+        let offset = {
+            x: 10,
+            y: 17,
+            width: 14,
+            height: 14,
+        }
+        let playerX = object.x + offset.x;
+        let playerY = object.y + offset.y
+        /*console.log("players")
+        console.log(playerX)
+        console.log(playerY)
+        console.log("mobs")
+        console.log(mob.x)
+        console.log(mob.y)*/
+        let distance = Math.sqrt((mob.x - playerX) * (mob.x - playerX) + (mob.y - playerY) * (mob.y - playerY))
+        if (distanceSmallest === null || distanceSmallest > distance && distance <= searchDistance) {
+            //console.log(distance)
+            distanceSmallest = distance
+            target.x = playerX;
+            target.y = playerY;
+        }
+    }
+    mob.target = target;
+    return target
+}
+
+function attack(players) {
+
+}
+
+function attackProjectile(players) {
+
+}
+
+/*function pathFinding(target,speed) {
+    easystar.setGrid(matrix);
+    easystar.setAcceptableTiles([0]);
+    easystar.setIterationsPerCalculation(1000);
+    easystar.findPath(0, 0, 4, 0, function( path ) {
+        if (path === null) {
+            //alert("Path was not found.");
+        } else {
+            easystar.calculate();
+
+            //alert("Path was found. The first Point is " + path[0].x + " " + path[0].y);
+        }
+    });
+}*/
+let intervals = [];
+
+function findPathForHero(mob, gridSize, grid,offset) {
+
+    let xOffset =  0;
+    let yOffset =  0;
+    for (let i = 0; i < offset; i++) {
+        if(i % 2=== 0){
+            xOffset++;
+        }else {
+            yOffset++;
+        }
+    }
+
+    let x = Math.floor(mob.x / gridSize)
+    let y = Math.floor(mob.y / gridSize)
+    let tx = Math.floor(mob.target.x / gridSize) + xOffset
+    let ty = Math.floor(mob.target.y / gridSize) + yOffset
+    // console.log(x +","+y)
+    // console.log(tx +","+ty)
+    //console.log(gridSize)
+    //console.log(Math.floor(mob.target.x/gridSize))
+    if (!isNaN(tx) && !isNaN(ty) && tx != null && ty !== null && tx !== undefined && ty !== undefined) {
+
+        if (x == tx && ty == y) {
+            return;
+        }
+        let gridBackup = grid.clone();
+        var finder = new PF.AStarFinder();
+        var path = finder.findPath(x, y, tx, ty, gridBackup);
+        mob.path = path;
+
+    }
+}
+
+function calculateAllMobs(io,mobs, players, matrix, gridSize, grid) {
+    let gridBackup = grid.clone();
+
+    let i= 0;
+
+    for (let i = 0; i < mobs.length; i++) {
+        let mob = mobs[i];
+
+        findClosestTarget(mob, players, 500);
+        if (mob.target !== null && !isNaN(mob.target.x) && !isNaN(mob.target.y)) {
+            try {
+
+                findPathForHero(mob, gridSize, gridBackup,i);
+            } catch (e) {
+
+            }
+        }
+
+        //moveMob(mob,gridSize);
+        //io.emit("mobs", mobs);
+        //gridBackup.setWalkableAt(Math.floor(mob.x / gridSize), Math.floor(mob.y / gridSize), false);
+    }
+
+    //moveMobs(io,mobs, gridSize)
+
+
+}
+function moveMob(mob,gridSize) {
+    let path = mob.path;
+    if (path !== null) {
+        //console.log(path)
+        if (path.length > 1) {
+            let nextLoc = path[1];
+            mob.x = nextLoc[0] * gridSize;
+            mob.y = nextLoc[1] * gridSize;
+            path.shift();
+        } else {
+            return;
+        }
+    }
+}
+function moveMobs(io,mobs, gridSize) {
+    for (let i = 0; i < mobs.length; i++) {
+        let mob = mobs[i];
+        let path = mob.path;
+        if (path !== null) {
+            //console.log(path)
+                if (path.length > 1) {
+                    let nextLoc = path[1];
+                    //console.log("nextLoc: " + nextLoc)
+
+                    // console.log(nextLoc)
+                    // console.log("is it working")
+                    // console.log(nextLoc[0])
+                    // console.log(nextLoc[1])
+                    // console.log("working")
+                    //let nextLockX = nextLoc[0] * gridSize;
+                    //let nextLockY = nextLoc[1] * gridSize;
+                   /* console.log("xNext:" + nextLockX)
+                    console.log("yNext:" + nextLockY)
+                    let xDif =Math.floor( nextLockX - mob.x);
+                    let yDif = Math.floor(nextLockY - mob.y);
+
+                    console.log("mobx:" + mob.x)
+                    console.log("moby:" + mob.y)
+
+                    console.log("xDif:" + xDif)
+                    console.log("yDif:" + yDif)
+                    let distance = Math.sqrt(xDif *xDif + yDif * yDif);
+                    let sin = (nextLockX - mob.x) / distance
+                    let cos = (nextLockY - mob.y) / distance
+                    console.log(distance)
+                    if (distance > mob.speed) {
+                        if (nextLockX - mob.x < 0) {
+                            mob.x -= mob.speed * sin
+                        } else {
+                            mob.x += mob.speed * sin
+                        }
+                        if (nextLockY - mob.y < 0) {
+                            mob.y -= mob.speed * cos
+                        } else {
+                            mob.y += mob.speed * cos
+                        }
+                    } else {
+                        mob.x =  nextLockX;
+                        mob.y =  nextLockY;
+                        path.shift()
+                        return;
+                    }*/
+
+                    mob.x = nextLoc[0] * gridSize;
+                    mob.y = nextLoc[1] * gridSize;
+                    path.shift();
+                }else {
+                    return;
+                }
+        }
+
+    }
+    io.emit("mobs", mobs);
+}
+
+module.exports = {
+    calculateAllMobs,
+    createMob,
+    initializePathFinder,
+    moveMobs
+}

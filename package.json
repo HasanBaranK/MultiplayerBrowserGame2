@@ -2,8 +2,10 @@
   "name": "MultiplayerBrowserGame2-a",
   "version": "1.0.0",
   "dependencies": {
+    "easystarjs": "^0.4.3",
     "express": "^4.17.1",
     "js-quadtree": "^2.0.1",
+    "pathfinding": "^0.4.18",
     "socket.io": "^2.3.0"
   }
 }

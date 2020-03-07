@@ -19,6 +19,7 @@ let mapFunctions = require("./server/map.js");
 let timeFunctions = require("./server/time.js");
 let hitCheckFunctions = require("./server/hitCheck.js");
 let collisionFunctions = require("./server/collision.js");
+let mobFunctions = require("./server/mob.js");
 
 let gridSizeX =64;
 let gridSizeY =64;
@@ -27,7 +28,10 @@ let rawdata = fs.readFileSync("server/collisions.json");
 let rectangles = JSON.parse(rawdata);
 
 //generate Map
-let maps = mapFunctions.generateMap(0,0,1000,1000,"Forest",gridSizeX,gridSizeY,rectangles)
+let mapSizeX = 3000;
+let mapSizeY = 3000;
+let pathFindingGridSize = 16;
+let maps = mapFunctions.generateMap(0,0,mapSizeX,mapSizeY,"Forest",gridSizeX,gridSizeY,rectangles)
 let map = maps.map
 let collisionMap = maps.collisionMap
 let treeMap = maps.treeMap
@@ -37,10 +41,21 @@ let projectiles = []
 let gameTime = 0;
 var players = {};
 var inventories = {};
-
 let images = {};
 images = getImages(images)
 quadtree = collisionFunctions.initializeQuadTree(quadtree,collisionMap);
+let matrix = mapFunctions.createGridForPathFinder(quadtree,mapSizeX,mapSizeY,pathFindingGridSize);
+let mobs = [];
+let gridPathFinder = mobFunctions.initializePathFinder(matrix);
+mobs.push(mobFunctions.createMob(0,0,1,1,null,matrix));
+
+mobs.push(mobFunctions.createMob(32,0,1,1,null,matrix));
+mobs.push(mobFunctions.createMob(64,0,1,1,null,matrix));
+mobs.push(mobFunctions.createMob(96,0,1,1,null,matrix));
+mobs.push(mobFunctions.createMob(128,0,1,1,null,matrix));
+mobs.push(mobFunctions.createMob(144,0,1,1,null,matrix));
+mobs.push(mobFunctions.createMob(160,0,1,1,null,matrix));
+
 
 function getImages(images) {
     fs.readdir(imageFolder, (err, files) => {
@@ -123,8 +138,10 @@ io.on('connection', function (socket) {
             map: map,
             treeMap: treeMap,
             gameTime: gameTime,
-            collisionMap:collisionMap
-        };
+            collisionMap:collisionMap,
+            matrix:matrix,
+            mobs: mobs,
+    };
         socket.emit('data', gameData);
     });
     socket.on('movement', function (data) {
@@ -147,6 +164,7 @@ io.on('connection', function (socket) {
         let obj = {
             gameTime: gameTime,
             players: players,
+            mobs: mobs,
         };
         io.emit("players",obj);
 
@@ -209,4 +227,14 @@ setInterval(function () {
     //movePlayers(players)
     gameTime = timeFunctions.updateGameTime(gameTime, 1)
     hitCheckFunctions.calculateAllProjectiles(io,projectiles,gameTime,players,quadtree);
+    //mobFunctions.calculateAllMobs(mobs,players,matrix,pathFindingGridSize,gridPathFinder)
+    //mobFunctions.moveMobs(mobs,gridPathFinder)
 }, 1000/60);
+setInterval(function () {
+    mobFunctions.calculateAllMobs(io,mobs,players,matrix,pathFindingGridSize,gridPathFinder)
+    //mobFunctions.moveMobs(mobs,gridPathFinder)
+}, 1000);
+setInterval(function () {
+    mobFunctions.moveMobs(io,mobs,pathFindingGridSize);
+    //mobFunctions.moveMobs(mobs,gridPathFinder)
+}, 150);

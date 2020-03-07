@@ -1,6 +1,8 @@
+const {quadTreeObjectsByPosition,checkCollision} = require("./collision.js");
 module.exports = {
     generateMap,
-    myGrid
+    myGrid,
+    createGridForPathFinder
 }
 function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSizeY,rectangles) {
 
@@ -33,8 +35,9 @@ function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSiz
     }
     //Trees
     amountOfTrees = Math.floor(Math.random() * Math.floor((amountOfBlocks / 2))) + 1;
+    //amountOfTrees += amountOfTrees *3;
     let amountOfRocks = Math.floor(Math.random() * Math.floor((amountOfBlocks / 15)))*2 + 1;
-
+    //amountOfRocks += amountOfRocks *3;
     console.log("generated trees amount :" + amountOfTrees);
 
     let treeMap = []
@@ -156,4 +159,29 @@ function myGrid(x, y, gridSize) {
         y: gridy
     }
     return position
+}
+function createGridForPathFinder(quadTree,mapSizeX,mapSizeY,pathFindingGridSize){
+    var matrix = [];
+    for (let i = 0; i < mapSizeX/pathFindingGridSize; i++) {
+        let matrix2 = []
+        matrix.push(matrix2);
+        for (let j = 0; j < mapSizeY/pathFindingGridSize; j++) {
+
+            let obj ={
+                x:i*pathFindingGridSize,
+                y:j *pathFindingGridSize,
+                width: pathFindingGridSize,
+                height: pathFindingGridSize
+            }
+            let objects = quadTreeObjectsByPosition(obj, quadTree);
+            let object = checkCollision(obj, objects);
+            if (object !== false) {
+                matrix[i].push(1);
+            }else {
+                matrix[i].push(0);
+            }
+        }
+    }
+    return matrix;
+
 }

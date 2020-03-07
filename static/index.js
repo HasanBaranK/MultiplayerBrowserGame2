@@ -10,7 +10,8 @@ let requestId;
 let quadTree = {};
 let projectiles = [];
 let gameTime = 0;
-
+let matrix = null;
+let mobs;
 
 $(document).ready(init);
 
@@ -28,6 +29,8 @@ function init() {
         socket.emit("getimages", {});
         socket.on("data", (res) => {
             data = res;
+            matrix = data.matrix;
+            mobs = data.mobs;
             gameTime = res.gameTime
             quadTree = initializeQuadTree(quadTree, data.collisionMap);
             //quadTree = data.quadtree;
@@ -42,24 +45,20 @@ function init() {
             console.log("joined game");
         });
         socket.on("projectile", (res) => {
-            //console.log("received from server")
-            //console.log(res)
-            console.log("projectilebefore" + gameTime)
             gameTime = res.gameTime;
-            console.log("projectilenew" + gameTime)
             projectiles.push(res.projectile)
 
         });
         socket.on("inventory", (res) => {
             gameState.inventory = res;
         });
+        socket.on("mobs", (res) => {
+            mobs = res;
+        });
         socket.on("players", (res) => {
             players = res.players;
-            console.log(res.players)
-            console.log("playertimebefore" + gameTime)
             gameTime = res.gameTime;
-            console.log("playertimenew" + gameTime)
-
+            mobs = res.mobs;
             if (me === undefined) {
                 me = players[socket.id]
 
@@ -118,6 +117,8 @@ function update() {
     drawTiles(14, 16, 64);
     //drawMapBack(14, 16, 64);
     drawPlayer();
+    drawPlayers();
+    drawMobs(mobs)
     drawMapFront(14, 16, 64);
     calculateAllProjectiles(projectiles, gameTime, quadTree, players)
     for (let ui in uis) {
@@ -126,12 +127,26 @@ function update() {
     //Debug
 
     //drawPlayerCollision()
-    drawPlayers();
+
+   /* if(matrix!==null) {
+        drawMatrix(matrix, 16)
+    }*/
     drawPopUps();
     drawUI();
     //drawMapCollision(data.collisionMap)
     //drawPlayerCollision()
 }
+function drawMobs(mobs){
+    if(mobs !== null && mobs !== undefined){
+        ctx.save()
+        ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+        for (let i = 0; i < mobs.length; i++) {
+            ctx.fillRect(mobs[i].x, mobs[i].y, 16, 16);
+        }
+        ctx.restore()
+    }
+}
+
 
 setInterval(function () {
     doTheMovement();
@@ -268,20 +283,16 @@ function predictPlayerPosition(player) {
                 try {
 
                     if (isNaN(predictedMoveX)) {
-                        console.log("preMoveX" + predictedMoveX)
                     } else {
                         predicted.x += predictedMoveX;
-                        console.log("predx:" + predicted.x)
                     }
                 } catch (e) {
                     console.log("error1")
                 }
                 try {
                     if (isNaN(predictedMoveY)) {
-                        console.log("preMoveY" + predictedMoveY)
                     } else {
                         predicted.y += predictedMoveY;
-                        console.log("predy:" + predicted.y)
                     }
                     predicted.y += predictedMoveY;
                 } catch (e) {
@@ -703,6 +714,40 @@ function drawMapCollision(map) {
     }
     ctx.restore()
 }
+function drawMatrix(matrix,gridSize) {
+    ctx.save()
+    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    for (let i = 0; i < matrix.length; i++) {
+
+        for (let j = 0; j < matrix[i].length ; j++) {
+            if ( matrix[i][j] === 1) {
+                ctx.fillRect(i * gridSize, j*gridSize, gridSize, gridSize);
+            }
+        }
+
+
+    }
+    ctx.restore()
+}
+
+var startPathfinding = function() {
+
+    for (var i = 0; i < mobs.length; i++) {
+
+        findPathForHero(mobs[i], function() {
+
+        });
+    }
+};
+
+function calculateAllMobs(mobs){
+    for (let i = 0; i < mobs.length; i++) {
+
+    }
+}
+
+
+
 
 class Rectangle {
     constructor(x, y, w, h) {
