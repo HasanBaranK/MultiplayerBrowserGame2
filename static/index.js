@@ -4,12 +4,16 @@ import {initializeQuadTree, move, cloneMe} from "./collision.js";
 import {calculateAllProjectiles, createProjectile} from "./projectiles.js";
 
 let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promises = [], players = {}, me = undefined,
-    currentCoords = {}, animator = {state: "idle"}, uis = {}, gameState = {}, popUpManager = new PopUpManager();
+    currentCoords = {}, animator = {state: "idle"}, uis = {}, gameState = {}, popUpManager = new PopUpManager(), vendors = {};
 let camera = new Camera(0, 0, 0);
 let requestId;
 let quadTree = {};
 let projectiles = [];
 let gameTime = 0;
+let actualMousePosition = {};
+let items = [];
+let inStatsScreen = false;
+
 let matrix = null;
 let mobs;
 
@@ -29,6 +33,9 @@ function init() {
         socket.emit("getimages", {});
         socket.on("data", (res) => {
             data = res;
+            gameTime = res.gameTime;
+            vendors = res.vendors;
+            items = res.items;
             matrix = data.matrix;
             mobs = data.mobs;
             gameTime = res.gameTime
@@ -45,7 +52,11 @@ function init() {
             console.log("joined game");
         });
         socket.on("projectile", (res) => {
+            //console.log("received from server")
+            //console.log(res)
+            console.log("projectilebefore" + gameTime)
             gameTime = res.gameTime;
+            console.log("projectilenew" + gameTime)
             projectiles.push(res.projectile)
 
         });
@@ -57,6 +68,8 @@ function init() {
         });
         socket.on("players", (res) => {
             players = res.players;
+            console.log(res.players)
+            console.log("playertimebefore" + gameTime)
             gameTime = res.gameTime;
             mobs = res.mobs;
             if (me === undefined) {
@@ -82,7 +95,25 @@ function configure() {
 
     currentCoords.x = cvs.width / 2 - 16;
     currentCoords.y = cvs.height / 2 - 16;
+
+    $("#canvas").click((evt) => {
+        mousePosition.x = evt.offsetX || evt.layerX;
+        mousePosition.y = evt.offsetY || evt.layerY;
+        actualMousePosition.x = mousePosition.x + camera.x;
+        actualMousePosition.y = mousePosition.y + camera.y;
+        openVendorInventory(actualMousePosition);
+    });
 }
+
+function openVendorInventory(pos){
+    for (let vendorIndex in vendors) {
+        let vendor = vendors[vendorIndex];
+        if (pos.x >= vendor.x && pos.x < vendor.x + 64 && pos.y >= vendor.y && pos.y < vendor.y + 64) {
+            console.log(vendor);
+        }
+    }
+}
+
 
 function animate() {
     update();
@@ -127,12 +158,17 @@ function update() {
     //Debug
 
     //drawPlayerCollision()
+    drawVendors();
+    drawItems();
 
    /* if(matrix!==null) {
         drawMatrix(matrix, 16)
     }*/
     drawPopUps();
     drawUI();
+    if(inStatsScreen){
+        drawStats();
+    }
     //drawMapCollision(data.collisionMap)
     //drawPlayerCollision()
 }
@@ -147,6 +183,42 @@ function drawMobs(mobs){
     }
 }
 
+
+function drawStats(){
+    //draw big rectangle
+    //draw stats on it but you have to position properly
+    //array of stats each with an offset increment offset and change y coord and draw stats afterwards
+    //ctx.fillText(text, x, y)
+    //ctx.fillRect(x,y,w,h)
+    ctx.fillStyle = "green";
+    ctx.fillRect(0 + camera.x, 0 + camera.y, cvs.width, cvs.height);
+    ctx.fillStyle = "black";
+
+}
+
+function drawVendors () {
+    for (let vendorIndex in vendors) {
+        let vendor = vendors[vendorIndex];
+        ctx.drawImage(images[vendor.name], vendor.x, vendor.y, 64, 64);
+    }
+}
+
+
+function drawItems () {
+    for (let itemIndex in items) {
+        let item = items[itemIndex];
+        if (item.x >= me.x && item.x < me.x + me.width + 8 && item.y >= me.y && item.y < me.y + me.height + 8) {
+            items.splice(itemIndex, 1);
+            console.log(item);
+            if (item.name === "coin") {
+                console.log(players[socket.id]);
+            }
+        }
+        else {
+            ctx.drawImage(images[item.name], item.x, item.y, 8, 8);
+        }
+    }
+}
 
 setInterval(function () {
     doTheMovement();
@@ -328,8 +400,6 @@ function drawPlayers() {
             } catch (e) {
                 //  console.log("important")
             }
-
-
         }
     }
 }
@@ -460,9 +530,13 @@ function drawMapFront(Xsize, Ysize, gridSize) {
 
 $(window).keydown((key) => {
     keys[key.key] = true;
+    let keyPressed = key.key;
     if (key.key === "i") {
         gameState.inInventory = !gameState.inInventory;
         socket.emit("inventory",);
+    }
+    if(keyPressed === "q"){
+        inStatsScreen = !inStatsScreen;
     }
 });
 

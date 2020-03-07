@@ -41,6 +41,9 @@ let projectiles = []
 let gameTime = 0;
 var players = {};
 var inventories = {};
+var vendors = {};
+var items = [];
+
 let images = {};
 images = getImages(images)
 quadtree = collisionFunctions.initializeQuadTree(quadtree,collisionMap);
@@ -68,6 +71,25 @@ function getImages(images) {
     });
     return images
 }
+
+function addVendors (name, x, y, items) {
+    vendors[name] = {name: name, x: x, y: y, items:items};
+}
+
+function addItem (name, minX, minY, maxX, maxY) {
+    items.push({name: name, x: minX + Math.random() * (maxX - minX), y: minY + Math.random() * (maxY - minY)});
+}
+
+addVendors("KFC", 150, 150, {chicken: 10});
+
+function addItems (numItems, itemName) {
+    for (let i = 0; i < numItems; i++) {
+        addItem(itemName, 0, 0, 300, 300);
+    }
+}
+
+numCoins = 20;
+addItems(numCoins, "coin");
 
 // Starts the server.
 server.listen(5000, function () {
@@ -104,6 +126,7 @@ io.on('connection', function (socket) {
             xp: 0,
             xpToLevel: 1000,
             level: 1,
+            coins:0,
             healingDelay: 0,
             lastPressTime: 0,
             lastJumpTime: 0,
@@ -139,9 +162,11 @@ io.on('connection', function (socket) {
             treeMap: treeMap,
             gameTime: gameTime,
             collisionMap:collisionMap,
+            vendors: vendors,
+            items: items,
             matrix:matrix,
             mobs: mobs,
-    };
+        };
         socket.emit('data', gameData);
     });
     socket.on('movement', function (data) {
@@ -156,6 +181,7 @@ io.on('connection', function (socket) {
                 player.delay = gameTime - data.gametime
                 player.x = data.x
                 player.y = data.y
+                player.coins = data.coins
 
             } else {
                 player.status = 0;
@@ -165,6 +191,17 @@ io.on('connection', function (socket) {
             gameTime: gameTime,
             players: players,
             mobs: mobs,
+        };
+        io.emit("players",obj);
+
+    });
+    socket.on('updatePlayer', function (data) {
+        let player = players[socket.id] || {};
+        player = data;
+
+        let obj = {
+            gameTime: gameTime,
+            players: players,
         };
         io.emit("players",obj);
 
@@ -186,7 +223,7 @@ io.on('connection', function (socket) {
         let obj = {
             projectile: projectile,
             gameTime: gameTime,
-        }
+        };
         projectiles.push(projectile);
         io.emit("projectile",obj);
     });
