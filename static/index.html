@@ -61,15 +61,19 @@
             -ms-user-select: none;
             user-select: none;
         }
+        .topLayer{
+            z-index: 100;
+        }
     </style>
 </head>
 <body>
-<button id="editor" class="unselectable">Collision Editor</button>
-<button id="mapeditor" class="unselectable">Map Editor</button>
-<button id="add" class="unselectable">Add Rectangle</button>
-<button id="select" class="unselectable">Select</button>
-<input type="text" id="imagename" placeholder="Image Name" class="unselectable">
+<button id="editor" class="unselectable topLayer">Collision Editor</button>
+<button id="mapeditor" class="unselectable topLayer">Map Editor</button>
+<button id="add" class="unselectable topLayer">Add Rectangle</button>
+<button id="select" class="unselectable topLayer">Select</button>
+<input type="text" id="imagename" placeholder="Image Name" class="unselectable topLayer">
 <canvas id="canvas"></canvas>
 <canvas id="mapeditorcanvas"></canvas>
+<canvas id="actualmapcanvas"></canvas>
 </body>
 </html>

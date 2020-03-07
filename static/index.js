@@ -7,12 +7,13 @@ let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promis
     currentCoords = {}, animator = {state: "idle"}, uis = {}, gameState = {}, popUpManager = new PopUpManager(),
     vendors = {};
 let camera = new Camera(0, 0, 0);
-let mapEditorCamera = new Camera(0,0,0);
+let mapEditorCamera = new Camera(0, 0, 0);
 let requestId;
 let quadTree = {};
 let projectiles = [];
 let gameTime = 0;
 let mapcvs, mapctx;
+let actualmapcvs, actualmapctx;
 
 
 $(document).ready(init);
@@ -24,6 +25,8 @@ function init() {
     ctx = cvs.getContext("2d");
     mapcvs = $("#mapeditorcanvas")[0];
     mapctx = mapcvs.getContext("2d");
+    actualmapcvs = $("#actualmapcanvas")[0];
+    actualmapctx = mapcvs.getContext("2d");
 
     editorConfig();
     mapEditorConfig();
@@ -88,13 +91,20 @@ function configure() {
     cvs.height = window.innerHeight;
     cvs.style.border = 'solid black 1px';
     cvs.style.position = "absolute";
-    cvs.zIndex = 10;
+    cvs.zIndex = 9;
 
     mapcvs.width = window.innerWidth;
     mapcvs.height = window.innerHeight;
     mapcvs.style.border = 'solid black 1px';
     mapcvs.style.position = "absolute";
-    mapcvs.style.zIndex = 0;
+    mapcvs.style.zIndex = 10;
+
+    actualmapcvs.width = window.innerWidth;
+    actualmapcvs.height = window.innerHeight;
+    actualmapcvs.style.border = 'solid black 1px';
+    actualmapcvs.style.position = "absolute";
+    actualmapcvs.style.zIndex = 8;
+
 
     currentCoords.x = cvs.width / 2 - 16;
     currentCoords.y = cvs.height / 2 - 16;
@@ -750,6 +760,7 @@ let imageListObject;
 let imageIndexes = [];
 let imageSelected = undefined;
 let gridSize = 32;
+let createdMapArray = [];
 
 function mapEditor() {
     updateMapEditor();
@@ -757,10 +768,24 @@ function mapEditor() {
 }
 
 function updateMapEditor() {
-    ctx.clearRect(camera.x, camera.y, cvs.width + camera.x, cvs.height + camera.y);
-    imageListObject.draw(ctx, camera);
+    imageListObject.draw(actualmapctx, mapEditorCamera);
+    if (keys["a"]) {
+        mapEditorCamera.move(actualmapctx, -gridSize, 0);
+    }
+    if (keys["d"]) {
+        mapEditorCamera.move(actualmapctx, gridSize, 0);
+    }
+    if (keys["s"]) {
+        mapEditorCamera.move(actualmapctx, 0, gridSize);
+    }
+    if (keys["w"]) {
+        mapEditorCamera.move(actualmapctx, 0, -gridSize);
+    }
+
+    drawMapCreated();
+
     if (imageSelected) {
-        ctx.drawImage(imageSelected, mousePosition.x, mousePosition.y);
+        actualmapctx.drawImage(imageSelected, mousePosition.x, mousePosition.y);
     }
 }
 
@@ -768,13 +793,23 @@ function setUpImagesListForMapEditor() {
     imageListObject = new ImageList(images, 10, 100, 32, 32, 10, 5, 5);
 }
 
-function drawGrid(){
-    for (let x = 0; x < cvs.width; x++) {
-        for (let y = 0; y < cvs.height; y++){
-            ctx.beginPath();
-            ctx.rect(x * gridSize, y * gridSize, gridSize, gridSize);
-            ctx.stroke();
+function drawGrid() {
+    actualmapctx.clearRect(0, 0, mapcvs.width, mapcvs.height);
+    for (let x = 0; x < mapcvs.width; x++) {
+        for (let y = 0; y < mapcvs.height; y++) {
+            actualmapctx.beginPath();
+            actualmapctx.rect(x * gridSize, y * gridSize, gridSize, gridSize);
+            actualmapctx.stroke();
         }
+    }
+}
+
+function drawMapCreated() {
+    actualmapctx.clearRect(mapEditorCamera.x, mapEditorCamera.y, actualmapcvs.width + mapEditorCamera.x, actualmapcvs.height + mapEditorCamera.y);
+
+    for (let createdMapIndex in createdMapArray) {
+        let createdMap = createdMapArray[createdMapIndex];
+        actualmapctx.drawImage(images[createdMap.name], createdMap.x, createdMap.y);
     }
 }
 
@@ -787,6 +822,7 @@ function mapEditorConfig() {
             mapEditorMode = true;
             ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
             camera.set(ctx, 0, 0);
+            drawGrid();
             window.cancelAnimationFrame(requestId);
             requestId = window.requestAnimationFrame(mapEditor);
         } else {
@@ -795,7 +831,7 @@ function mapEditorConfig() {
             mapEditorMode = false;
             ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
             camera.restore(ctx);
-            drawGrid();
+            mapctx.clearRect(0, 0, mapcvs.width, mapcvs.height);
             window.cancelAnimationFrame(requestId);
             requestId = window.requestAnimationFrame(animate);
         }
@@ -824,6 +860,14 @@ function mapEditorConfig() {
                 xIndex = 0;
             }
         }
+        if(imageSelected){
+            let placedXGrid = (mousePosition.x + mapEditorCamera.x);
+            let placedYGrid = (mousePosition.y + mapEditorCamera.x);
+            placedXGrid = (placedXGrid / gridSize) * gridSize;
+            placedYGrid = (placedYGrid / gridSize) * gridSize;
+            createdMapArray.push({name: imageSelected.name, x: placedXGrid, y: placedYGrid})
+        }
+        console.log(createdMapArray);
     });
     $("#mapeditorcanvas").mousemove(function (evt) {
         mousePosition.x = evt.offsetX || evt.layerX;
