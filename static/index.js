@@ -603,3 +603,52 @@ export {
 }
 
 /////////////////////////Map Editor/////////////////////////////
+// let mapEditorMode = false;
+// let mapMousePosition = {};
+// let mapImageName;
+// let mapTimebefore = Date.now();
+// let mapTimenow = Date.now();
+//
+// function mapEditorConfig() {
+//     $("#mapeditor").click(() => {
+//         if (!editorMode) {
+//             $("#editor")[0].innerText = "Game";
+//             $("#mapeditor")[0].style.display = "none";
+//             $("#add")[0].style.display = "block";
+//             $("#imagename")[0].style.display = "block";
+//             $("#select")[0].style.display = "block";
+//             editorMode = true;
+//             ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
+//             camera.set(ctx, 0, 0);
+//             window.cancelAnimationFrame(requestId);
+//             requestId = window.requestAnimationFrame(editor);
+//         } else {
+//             $("#editor")[0].innerText = "Collision Editor";
+//             $("#mapeditor")[0].style.display = "none";
+//             $("#add")[0].style.display = "none";
+//             $("#imagename")[0].style.display = "none";
+//             $("#select")[0].style.display = "none";
+//             editorMode = false;
+//             ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
+//             camera.restore(ctx);
+//             window.cancelAnimationFrame(requestId);
+//             requestId = window.requestAnimationFrame(animate);
+//         }
+//     });
+//
+//     $("#add").click(() => {
+//         addRectangle(camera.x + cvs.width / 2 - 50, camera.y + cvs.height / 2 - 50, 100, 100);
+//     });
+//
+//     $("#select").click(() => {
+//         imageName = $("#imagename")[0].value;
+//     });
+//
+//     $("#canvas").click((evt) => {
+//         mousePosition.x = evt.offsetX || evt.layerX;
+//         mousePosition.y = evt.offsetY || evt.layerY;
+//         checkRectangleIndex(mousePosition.x + camera.x, mousePosition.y + camera.y);
+//     });
+// }
+//
+//
