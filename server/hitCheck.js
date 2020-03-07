@@ -4,7 +4,7 @@ module.exports = {
     calculateAllProjectiles
 }
 
-function calculateAllProjectiles(projectiles, currentGameTime, players,quadTree) {
+function calculateAllProjectiles(io,projectiles, currentGameTime, players,quadTree) {
 
     for (let i = 0; i < projectiles.length; i++) {
         let projectile = projectiles[i];
@@ -52,19 +52,25 @@ function calculateAllProjectiles(projectiles, currentGameTime, players,quadTree)
             let object = collisionFunctions.checkCollision(obj, objects)
             if (object !== false) {
                 projectiles.splice(i, 1);
-                console.log("hit");
+                console.log("hit object");
                 continue;
             }
             object = checkIfHitPlayer(obj, players,projectile.origin)
             //console.log(object)
             if (object !== false) {
                 projectiles.splice(i, 1);
-                console.log("hit");
+                console.log("hit player");
+                console.log(object);
                 object.health -= 10;
                 if (object.health <= 0) {
                     object.isDead = true;
                     console.log("dead")
                 }
+                let obj = {
+                    players:players,
+                    gameTime: currentGameTime
+                }
+                io.emit("players",obj);
                 continue;
             }
 
@@ -106,7 +112,7 @@ function checkIfHitPlayer(projectile, players,origin) {
             projectile.x + projectile.width > object.x &&
             projectile.y < object.y + object.height &&
             projectile.y + projectile.height > object.y) {
-            return object;
+            return players[key];
             // collision detected!
         }
     }

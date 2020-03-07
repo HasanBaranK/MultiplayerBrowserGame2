@@ -23,12 +23,12 @@ function init() {
     editorConfig(ctx, cvs, camera, requestId);
     configure();
 
-    socket = io.connect('http://localhost:5000');
+    socket = io.connect({reconnectionDelay: 1000, reconnection: false});
     socket.on("connect", () => {
         socket.emit("getimages", {});
         socket.on("data", (res) => {
             data = res;
-            gameTime = res.gameTime;
+            gameTime = res.gameTime
             quadTree = initializeQuadTree(quadTree, data.collisionMap);
             //quadTree = data.quadtree;
             socket.emit("newplayer", {});
@@ -44,7 +44,9 @@ function init() {
         socket.on("projectile", (res) => {
             //console.log("received from server")
             //console.log(res)
+            console.log("projectilebefore" + gameTime)
             gameTime = res.gameTime;
+            console.log("projectilenew" + gameTime)
             projectiles.push(res.projectile)
 
         });
@@ -53,8 +55,10 @@ function init() {
         });
         socket.on("players", (res) => {
             players = res.players;
+            console.log(res.players)
+            console.log("playertimebefore" + gameTime)
             gameTime = res.gameTime;
-
+            console.log("playertimenew" + gameTime)
 
             if (me === undefined) {
                 me = players[socket.id]
@@ -68,7 +72,6 @@ function init() {
 
             }
 
-            socket.emit("players");
         });
     });
 }
@@ -116,7 +119,10 @@ function update() {
     //drawMapBack(14, 16, 64);
     drawPlayer();
     drawMapFront(14, 16, 64);
-    calculateAllProjectiles(projectiles, gameTime, quadTree, players);
+    calculateAllProjectiles(projectiles, gameTime, quadTree, players)
+    for (let ui in uis) {
+        uis[ui].draw(ctx, camera);
+    }
     //Debug
 
     //drawPlayerCollision()
@@ -169,8 +175,17 @@ function doTheMovement() {
     }
     if (locationChanged) {
 
-        socket.emit("movement", {"w": keys["w"], "a": keys["a"], "s": keys["s"], "d": keys["d"], "x": me.x, "y": me.y});
+        socket.emit("movement", {
+            "w": keys["w"],
+            "a": keys["a"],
+            "s": keys["s"],
+            "d": keys["d"],
+            "x": me.x,
+            "y": me.y,
+            "gametime": gameTime
+        });
     }
+
 }
 
 function drawPlayer() {
@@ -195,16 +210,115 @@ function drawPlayer() {
     }
 }
 
+function createFakePlayer() {
+    return {
+        x: 320,
+        histX: 320,
+        y: 100,
+        histY: 100,
+        delay: 0,
+        histgametime: 0,
+        lastgametime: 0,
+        status: 0,
+        maximumHealth: 150,
+        health: 100,
+        maximumEnergy: 100,
+        energy: 100,
+        width: 14,
+        height: 14,
+        isDead: false,
+        isMob: false,
+        inventory: [],
+        attacking: false,
+        jumping: false,
+        facing: "right",
+        equipped: [],
+        holding: [],
+        xp: 0,
+        xpToLevel: 1000,
+        level: 1,
+        healingDelay: 0,
+        lastPressTime: 0,
+        lastJumpTime: 0,
+        lastMoveTime: 0,
+        followLight: null,
+        data: null,
+    }
+}
+
+function predictPlayerPosition(player) {
+    try {
+        let predicted = createFakePlayer();
+        predicted = Object.assign(predicted, player);
+
+        //console.log(predicted);
+        let dif = gameTime - player.lastgametime;
+        //console.log("dif:" + dif)
+        if (player.delay * 2 > dif && dif > 2) {
+            //console.log("predicting")
+            let lastMoveTimeDiff = player.lastgametime - player.histgametime;
+            if (lastMoveTimeDiff > 1) {
+                let moveAmountX = player.x - player.histX;
+                let moveAmountY = player.y - player.histY;
+                //console.log("lastMoveTimeDiff:" + lastMoveTimeDiff)
+                let predictedMoveX = dif * moveAmountX / lastMoveTimeDiff;
+                let predictedMoveY = dif * moveAmountY / lastMoveTimeDiff;
+                //console.log("preMoveX" + predictedMoveX)
+                //console.log("preMoveY" + predictedMoveY)
+                try {
+
+                    if (isNaN(predictedMoveX)) {
+                        console.log("preMoveX" + predictedMoveX)
+                    } else {
+                        predicted.x += predictedMoveX;
+                        console.log("predx:" + predicted.x)
+                    }
+                } catch (e) {
+                    console.log("error1")
+                }
+                try {
+                    if (isNaN(predictedMoveY)) {
+                        console.log("preMoveY" + predictedMoveY)
+                    } else {
+                        predicted.y += predictedMoveY;
+                        console.log("predy:" + predicted.y)
+                    }
+                    predicted.y += predictedMoveY;
+                } catch (e) {
+                    console.log("error2")
+                }
+                return predicted
+            }
+        }
+    } catch (e) {
+        console.log("error3")
+        return player;
+    }
+    return player;
+
+}
+
 function drawPlayers() {
     for (let playerIndex in players) {
-        let player = players[playerIndex];
         if (playerIndex !== socket.id) {
-            if (player.isDead) {
-                //dont delete this
-                ctx.drawImage(images["stick"], player.x, player.y);
-            } else {
-                ctx.drawImage(images["idle"], 0, 0, 32, 32, player.x, player.y, 32, 32);
+
+            let player = players[playerIndex];
+
+
+            //ctx.drawImage(images["idle"], 0, 0, 32, 32, player.x, player.y, 32, 32);
+            let predicted = predictPlayerPosition(player);
+            try {
+                if (player.isDead) {
+                    //dont delete this
+                    ctx.drawImage(images["stick"], player.x, player.y);
+                } else {
+                    ctx.drawImage(images["idle"], 0, 0, 32, 32, player.x, player.y, 32, 32);
+                }
+            } catch (e) {
+                //  console.log("important")
             }
+
+
         }
     }
 }
@@ -300,7 +414,7 @@ function drawMapFront(Xsize, Ysize, gridSize) {
     for (; blockX <= meX + gridSize * Xsize; blockX += gridSize) {
         if (data.map[blockX] != null) {
 
-            let blockY = meY - gridSize * Ysize;
+            let blockY = meY - gridSize * Ysize
             if (blockY < 0) {
                 blockY = 0;
             }
@@ -407,6 +521,7 @@ function radians_to_degrees(radians) {
     return radians * (180 / pi);
 }
 
+
 //////////////////////Editor//////////////////////////////////
 
 let editorMode = false;
@@ -416,6 +531,7 @@ let mousePosition = {};
 let imageName;
 let timebefore = Date.now();
 let timenow = Date.now();
+
 
 function editorConfig() {
     $("#editor").click(() => {
@@ -456,6 +572,7 @@ function editorConfig() {
         checkRectangleIndex(mousePosition.x + camera.x, mousePosition.y + camera.y);
     });
 }
+
 
 function editor() {
     updateEditor();

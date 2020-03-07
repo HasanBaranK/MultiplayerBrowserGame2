@@ -65,7 +65,12 @@ io.on('connection', function (socket) {
     socket.on('newplayer', function () {
         players[socket.id] = {
             x: 320,
+            histX: 320,
             y: 100,
+            histY: 100,
+            delay: 0,
+            histgametime: 0,
+            lastgametime: 0,
             status: 0,
             maximumHealth: 150,
             health: 100,
@@ -123,16 +128,27 @@ io.on('connection', function (socket) {
         socket.emit('data', gameData);
     });
     socket.on('movement', function (data) {
-
         let player = players[socket.id] || {};
         player.data = data;
         if (player.isDead === false) {
             if (data.a || data.w || data.d || data.s || data[' ']) {
+                player.histX = player.x
+                player.histY = player.y
+                player.histgametime = player.lastgametime
+                player.lastgametime = data.gametime
+                player.delay = gameTime - data.gametime
+                player.x = data.x
+                player.y = data.y
 
             } else {
                 player.status = 0;
             }
         }
+        let obj = {
+            gameTime: gameTime,
+            players: players,
+        };
+        io.emit("players",obj);
 
     });
     socket.on('players', function (data){
@@ -148,7 +164,7 @@ io.on('connection', function (socket) {
     socket.on('projectile', function (projectile){
 
         projectile.origin = socket.id;
-
+        projectile.gameTimeFire = gameTime;
         let obj = {
             projectile: projectile,
             gameTime: gameTime,
@@ -190,7 +206,7 @@ function movePlayers(players) {
     }
 }
 setInterval(function () {
-    movePlayers(players);
+    //movePlayers(players)
     gameTime = timeFunctions.updateGameTime(gameTime, 1)
-    hitCheckFunctions.calculateAllProjectiles(projectiles,gameTime,players,quadtree);
+    hitCheckFunctions.calculateAllProjectiles(io,projectiles,gameTime,players,quadtree);
 }, 1000/60);

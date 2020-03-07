@@ -96,11 +96,12 @@ function calculateAllProjectiles(projectiles, currentGameTime, quadTree,players)
                 projectiles.splice(i, 1);
                 console.log("hit");
                 popUpManager.addPopUp(object.x, object.y, 10);
-                // object.health -= 10;
-                // if (object.health <= 0) {
-                //     object.isDead = true;
-                //     console.log("dead")
-                // }
+                object.health -= 10;
+                if (object.health <= 0) {
+                    object.isDead = true;
+                    console.log("dead")
+                }
+
                 continue;
             }
             drawImageRotation(projectile.name, x, y, 1, projectile.sin / projectile.cos, projectile.sin, projectile.cos);
@@ -149,7 +150,7 @@ function checkIfHitPlayer(projectile, players,origin) {
             projectile.x + projectile.width > object.x &&
             projectile.y < object.y + object.height &&
             projectile.y + projectile.height > object.y) {
-            return object;
+            return players[key];
             // collision detected!
         }
     }
