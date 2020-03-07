@@ -14,6 +14,8 @@ function createMob(x, y, width, height, target, matrix) {
         matrix: matrix,
         path: null,
         speed: 10,
+        health: 20,
+        attack: 10,
     }
 
     return mob
@@ -24,13 +26,14 @@ function initializePathFinder(matrix) {
     return grid;
 }
 
-function findClosestTarget(mob, players, searchDistance) {
+function findClosestTarget(mob, players, searchDistance,projectiles,quadTree,gameTime,io) {
 
     let target = {
         x: null,
         y: null,
     }
     let distanceSmallest = null
+    let selected;
     for (let key in players) {
 
         let object = players[key]
@@ -49,23 +52,57 @@ function findClosestTarget(mob, players, searchDistance) {
         console.log(mob.x)
         console.log(mob.y)*/
         let distance = Math.sqrt((mob.x - playerX) * (mob.x - playerX) + (mob.y - playerY) * (mob.y - playerY))
+        console.log(distance)
         if (distanceSmallest === null || distanceSmallest > distance && distance <= searchDistance) {
             //console.log(distance)
-            distanceSmallest = distance
-            target.x = playerX;
-            target.y = playerY;
+            if(distance < searchDistance) {
+                distanceSmallest = distance
+                target.x = playerX;
+                target.y = playerY;
+                selected = object;
+                if(distanceSmallest<200){
+                    attackProjectile(io,mob,object,projectiles,quadTree,gameTime)
+                }
+            }
+
         }
+
     }
     mob.target = target;
     return target
 }
 
-function attack(players) {
+function attack(mob,players) {
 
 }
-
-function attackProjectile(players) {
-
+function makeProjectileObject(projectiles, name, startX, startY, cos, sin, power, gameTimeFire) {
+    let Projectile = {
+        name: name,
+        startX: startX,
+        startY: startY,
+        cos: cos,
+        sin: sin,
+        power: power,
+        gameTimeFire: gameTimeFire,
+        origin: "0",
+    }
+    return Projectile;
+}
+function attackProjectile(io,mob,player,projectiles,quadTree,gameTime) {
+    let up = player.y - mob.y
+    let down = player.x - mob.x
+    let hip = Math.sqrt(up * up + down * down);
+    let sin = up / hip;
+    let cos = down / hip;
+    let projectile = makeProjectileObject(projectiles,"arrow2",mob.x,mob.y,cos,sin,10, gameTime)
+    projectile.origin = "0";
+    projectile.gameTimeFire = gameTime;
+    let obj = {
+        projectile: projectile,
+        gameTime: gameTime,
+    }
+    projectiles.push(projectile);
+    io.emit("projectile",obj);
 }
 
 /*function pathFinding(target,speed) {
@@ -117,32 +154,35 @@ function findPathForHero(mob, gridSize, grid,offset) {
     }
 }
 
-function calculateAllMobs(io,mobs, players, matrix, gridSize, grid) {
-    let gridBackup = grid.clone();
+function calculateAllMobs(io,mobs, players, matrix, gridSize, grid,projectiles,quadTree,gameTime) {
 
     let i= 0;
-
     for (let i = 0; i < mobs.length; i++) {
         let mob = mobs[i];
 
-        findClosestTarget(mob, players, 500);
-        if (mob.target !== null && !isNaN(mob.target.x) && !isNaN(mob.target.y)) {
-            try {
 
-                findPathForHero(mob, gridSize, gridBackup,i);
-            } catch (e) {
+            calculateMob(mob, players, gridSize, grid, i,projectiles,quadTree,gameTime,io)
 
-            }
-        }
-
-        //moveMob(mob,gridSize);
-        //io.emit("mobs", mobs);
-        //gridBackup.setWalkableAt(Math.floor(mob.x / gridSize), Math.floor(mob.y / gridSize), false);
     }
 
     //moveMobs(io,mobs, gridSize)
 
 
+}
+function calculateMob(mob,players,gridSize,gridBackup,i,projectiles,quadTree,gameTime,io){
+
+    findClosestTarget(mob, players, 300,projectiles,quadTree,gameTime,io);
+
+    if (mob.target !== null && !isNaN(mob.target.x) && !isNaN(mob.target.y)) {
+        try {
+
+
+                findPathForHero(mob, gridSize, gridBackup, i);
+
+        } catch (e) {
+
+        }
+    }
 }
 function moveMob(mob,gridSize) {
     let path = mob.path;

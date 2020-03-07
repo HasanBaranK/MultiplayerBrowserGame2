@@ -30,7 +30,7 @@ let rectangles = JSON.parse(rawdata);
 //generate Map
 let mapSizeX = 3000;
 let mapSizeY = 3000;
-let pathFindingGridSize = 16;
+let pathFindingGridSize = 32;
 let maps = mapFunctions.generateMap(0,0,mapSizeX,mapSizeY,"Forest",gridSizeX,gridSizeY,rectangles)
 let map = maps.map
 let collisionMap = maps.collisionMap
@@ -50,15 +50,22 @@ quadtree = collisionFunctions.initializeQuadTree(quadtree,collisionMap);
 let matrix = mapFunctions.createGridForPathFinder(quadtree,mapSizeX,mapSizeY,pathFindingGridSize);
 let mobs = [];
 let gridPathFinder = mobFunctions.initializePathFinder(matrix);
-mobs.push(mobFunctions.createMob(0,0,1,1,null,matrix));
+for (let i = 0; i < 10; i++) {
+    let rand = Math.floor(Math.random() * 90)
+    console.log(rand)
+    let rand2 = Math.floor(Math.random() * 90)
+    console.log(rand2)
+    mobs.push(mobFunctions.createMob(rand*pathFindingGridSize,rand2*pathFindingGridSize,1,1,null,matrix));
+}
 
+/*
 mobs.push(mobFunctions.createMob(32,0,1,1,null,matrix));
 mobs.push(mobFunctions.createMob(64,0,1,1,null,matrix));
 mobs.push(mobFunctions.createMob(96,0,1,1,null,matrix));
 mobs.push(mobFunctions.createMob(128,0,1,1,null,matrix));
 mobs.push(mobFunctions.createMob(144,0,1,1,null,matrix));
 mobs.push(mobFunctions.createMob(160,0,1,1,null,matrix));
-
+*/
 
 function getImages(images) {
     fs.readdir(imageFolder, (err, files) => {
@@ -263,15 +270,20 @@ function movePlayers(players) {
 setInterval(function () {
     //movePlayers(players)
     gameTime = timeFunctions.updateGameTime(gameTime, 1)
-    hitCheckFunctions.calculateAllProjectiles(io,projectiles,gameTime,players,quadtree);
+    hitCheckFunctions.calculateAllProjectiles(io,projectiles,gameTime,players,quadtree,mobs);
     //mobFunctions.calculateAllMobs(mobs,players,matrix,pathFindingGridSize,gridPathFinder)
     //mobFunctions.moveMobs(mobs,gridPathFinder)
 }, 1000/60);
 setInterval(function () {
-    mobFunctions.calculateAllMobs(io,mobs,players,matrix,pathFindingGridSize,gridPathFinder)
+    //console.time('calculation');
+    mobFunctions.calculateAllMobs(io,mobs,players,matrix,pathFindingGridSize,gridPathFinder,projectiles,quadtree,gameTime)
+    //console.timeEnd('calculation');
+
     //mobFunctions.moveMobs(mobs,gridPathFinder)
+    console.log(mobs.length)
 }, 1000);
 setInterval(function () {
-    mobFunctions.moveMobs(io,mobs,pathFindingGridSize);
+
+    mobFunctions.moveMobs(io, mobs, pathFindingGridSize);
     //mobFunctions.moveMobs(mobs,gridPathFinder)
-}, 150);
+}, 200);

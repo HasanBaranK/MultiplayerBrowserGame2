@@ -4,7 +4,7 @@ module.exports = {
     calculateAllProjectiles
 }
 
-function calculateAllProjectiles(io,projectiles, currentGameTime, players,quadTree) {
+function calculateAllProjectiles(io,projectiles, currentGameTime, players,quadTree,mobs) {
 
     for (let i = 0; i < projectiles.length; i++) {
         let projectile = projectiles[i];
@@ -60,7 +60,6 @@ function calculateAllProjectiles(io,projectiles, currentGameTime, players,quadTr
             if (object !== false) {
                 projectiles.splice(i, 1);
                 console.log("hit player");
-                console.log(object);
                 object.health -= 10;
                 if (object.health <= 0) {
                     object.isDead = true;
@@ -72,6 +71,23 @@ function calculateAllProjectiles(io,projectiles, currentGameTime, players,quadTr
                 }
                 io.emit("players",obj);
                 continue;
+            }
+            if(projectile.origin === "0"){
+
+            }else {
+                object = checkIfHitMob(obj, mobs)
+                if (object !== false) {
+                    projectiles.splice(i, 1);
+                    console.log("hit mob");
+                    object.mob.health -= 10;
+                    if (object.mob.health <= 0) {
+                        mobs.splice(object.key, 1);
+                        //delete mobs[object.key]
+                        console.log("dead")
+                    }
+                    io.emit("mobs", mobs);
+                    continue;
+                }
             }
 
         }/*
@@ -113,6 +129,53 @@ function checkIfHitPlayer(projectile, players,origin) {
             projectile.y < object.y + object.height &&
             projectile.y + projectile.height > object.y) {
             return players[key];
+            // collision detected!
+        }
+    }
+
+    return false;
+}
+
+function cloneMob(mob) {
+    let mob2 = {
+
+        x: mob.x,
+        y: mob.y,
+        width: mob.width,
+        height: mob.height,
+        matrix: mob.matrix,
+        path: mob.path,
+        speed: mob.speed,
+        health: mob.health,
+        attack: mob.attack,
+    }
+    return mob2;
+}
+
+function checkIfHitMob(projectile,mobs) {
+
+    for (let key in mobs) {
+
+        let object = cloneMob(mobs[key])
+        let offset = {
+            x: 0,
+            y: 0,
+            width: 32,
+            height: 32,
+        }
+        object.x += offset.x
+        object.y += offset.y
+        object.width = offset.width
+        object.height = offset.height
+        if (projectile.x < object.x + object.width &&
+            projectile.x + projectile.width > object.x &&
+            projectile.y < object.y + object.height &&
+            projectile.y + projectile.height > object.y) {
+            let obj = {
+                key:key,
+                mob:mobs[key]
+            }
+            return obj;
             // collision detected!
         }
     }
