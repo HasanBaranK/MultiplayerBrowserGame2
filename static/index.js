@@ -200,6 +200,7 @@ function drawPlayers() {
         let player = players[playerIndex];
         if (playerIndex !== socket.id) {
             if (player.isDead) {
+                //dont delete this
                 ctx.drawImage(images["stick"], player.x, player.y);
             } else {
                 ctx.drawImage(images["idle"], 0, 0, 32, 32, player.x, player.y, 32, 32);
