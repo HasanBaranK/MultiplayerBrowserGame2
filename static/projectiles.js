@@ -84,9 +84,11 @@ function calculateAllProjectiles(projectiles, currentGameTime, quadTree,players)
                 height: 5,
             }
             let objects = quadTreeObjectsByPosition(obj, quadTree);
-            let object = checkCollision(obj, objects)
+            let object = checkCollision(obj, objects);
             if (object !== false) {
                 projectiles.splice(i, 1);
+                //tree hit   dothis
+                console.log(object);
                 console.log("hit");
                 continue;
             }
