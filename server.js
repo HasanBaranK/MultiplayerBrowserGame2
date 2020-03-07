@@ -36,6 +36,7 @@ let projectiles = []
 //game time
 let gameTime = 0;
 var players = {};
+var inventories = {};
 
 let images = {};
 images = getImages(images)
@@ -90,7 +91,9 @@ io.on('connection', function (socket) {
             followLight: null,
             data: null,
         };
-        let player = players[socket.id]
+        inventories[socket.id] = {};
+        inventories[socket.id]["sword"] = 1;
+        let player = players[socket.id];
         socket.join('players');
         console.log("Player joined");
         socket.emit("joined","success");
@@ -138,6 +141,9 @@ io.on('connection', function (socket) {
             players: players,
         };
         socket.emit("players",obj);
+    });
+    socket.on('inventory', function(){
+      socket.emit("inventory", inventories[socket.id]);
     });
     socket.on('projectile', function (projectile){
 

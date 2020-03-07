@@ -1,4 +1,4 @@
-import {sendProjectileServer, drawImageRotation} from "./index.js"
+import {sendProjectileServer, drawImageRotation, popUpManager} from "./index.js"
 import {checkCollision, quadTreeObjectsByPosition} from "./collision.js"
 
 function createProjectile(projectiles, name, startX, startY, currentX, currentY, dirX, dirY, power, quadTree, players, gameTimeFire) {
@@ -95,6 +95,7 @@ function calculateAllProjectiles(projectiles, currentGameTime, quadTree,players)
             if (object !== false) {
                 projectiles.splice(i, 1);
                 console.log("hit");
+                popUpManager.addPopUp(object.x, object.y, 10);
                 // object.health -= 10;
                 // if (object.health <= 0) {
                 //     object.isDead = true;

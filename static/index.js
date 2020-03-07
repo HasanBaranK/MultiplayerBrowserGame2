@@ -1,16 +1,16 @@
 /////////////////////INITIALIZATION CODE//////////////////////////
-
+import {Camera, Player, Inventory, PopUpManager, Bar} from "./classes.js";
+import {initializeQuadTree, move, cloneMe} from "./collision.js";
+import {calculateAllProjectiles, createProjectile} from "./projectiles.js";
 
 let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promises = [], players = {}, me = undefined,
-    currentCoords = {}, animator = {state: "idle"}, uis = {}, gameState = {};
+    currentCoords = {}, animator = {state: "idle"}, uis = {}, gameState = {}, popUpManager = new PopUpManager();
 let camera = new Camera(0, 0, 0);
 let requestId;
 let quadTree = {};
 let projectiles = [];
 let gameTime = 0;
-import {Camera, Player, Inventory} from "./classes.js";
-import {initializeQuadTree,move,cloneMe} from "./collision.js";
-import {calculateAllProjectiles,createProjectile} from "./projectiles.js";
+
 
 $(document).ready(init);
 
@@ -20,7 +20,7 @@ function init() {
     cvs = $("#canvas")[0];
     ctx = cvs.getContext("2d");
 
-    editorConfig(ctx,cvs,camera,requestId);
+    editorConfig(ctx, cvs, camera, requestId);
     configure();
 
     socket = io.connect('http://localhost:5000');
@@ -28,8 +28,8 @@ function init() {
         socket.emit("getimages", {});
         socket.on("data", (res) => {
             data = res;
-            gameTime = res.gameTime
-            quadTree = initializeQuadTree(quadTree,data.collisionMap);
+            gameTime = res.gameTime;
+            quadTree = initializeQuadTree(quadTree, data.collisionMap);
             //quadTree = data.quadtree;
             socket.emit("newplayer", {});
         });
@@ -47,6 +47,9 @@ function init() {
             gameTime = res.gameTime;
             projectiles.push(res.projectile)
 
+        });
+        socket.on("inventory", (res) => {
+            gameState.inventory = res;
         });
         socket.on("players", (res) => {
             players = res.players;
@@ -100,7 +103,9 @@ function setUpAnimations() {
 }
 
 function setUpUI() {
-    uis["inventory"] = new Inventory(images["itemframe2"], 16, 200, 4, 4, 10, 5, gameState);
+    uis["inventory"] = new Inventory(images["itemframe2"], 16, 200, 4, 4, 10, 5, gameState, images);
+    uis["healthbar"] = new Bar(images["healthbar"], 8, cvs.height - 32, 0, 100);
+    uis["healthbarframe"] = new Bar(images["healthbarframe"], 8, cvs.height - 32, 100, 100)
 }
 
 
@@ -111,23 +116,22 @@ function update() {
     //drawMapBack(14, 16, 64);
     drawPlayer();
     drawMapFront(14, 16, 64);
-    calculateAllProjectiles(projectiles,gameTime,quadTree,players)
-    for (let ui in uis) {
-        uis[ui].draw(ctx, camera);
-    }
+    calculateAllProjectiles(projectiles, gameTime, quadTree, players);
     //Debug
 
     //drawPlayerCollision()
     drawPlayers();
+    drawPopUps();
+    drawUI();
     //drawMapCollision(data.collisionMap)
     //drawPlayerCollision()
 }
 
 setInterval(function () {
     doTheMovement();
-    gameTime = updateGameTime(gameTime,1);
+    gameTime = updateGameTime(gameTime, 1);
 
-}, 1000/60);
+}, 1000 / 60);
 
 function doTheMovement() {
     let locationChanged = false;
@@ -135,24 +139,24 @@ function doTheMovement() {
     let step = 8;
     if (keys["a"]) {
         locationChanged = true;
-        if (move(me,0, quadTree, 2)) {
+        if (move(me, 0, quadTree, 2)) {
         }
 
     }
     if (keys["d"]) {
         locationChanged = true;
-        if (move(me,1, quadTree, 2)) {
+        if (move(me, 1, quadTree, 2)) {
         }
 
     }
     if (keys["s"]) {
         locationChanged = true;
-        if (move(me,2, quadTree, 2)) {
+        if (move(me, 2, quadTree, 2)) {
         }
     }
     if (keys["w"]) {
         locationChanged = true;
-        if (move(me,3, quadTree, 2)) {
+        if (move(me, 3, quadTree, 2)) {
         }
     }
     if (keys["p"]) {
@@ -191,13 +195,28 @@ function drawPlayer() {
     }
 }
 
-function drawPlayers(){
-    for (let playerIndex in players){
+function drawPlayers() {
+    for (let playerIndex in players) {
         let player = players[playerIndex];
-        if(playerIndex !== socket.id){
-            ctx.drawImage(images["idle"], 0, 0, 32, 32, player.x, player.y, 32, 32);
+        if (playerIndex !== socket.id) {
+            if (player.isDead) {
+                ctx.drawImage(images["stick"], player.x, player.y);
+            } else {
+                ctx.drawImage(images["idle"], 0, 0, 32, 32, player.x, player.y, 32, 32);
+            }
         }
     }
+}
+
+function drawUI() {
+    uis["healthbar"].update(me.health);
+    for (let ui in uis) {
+        uis[ui].draw(ctx, camera);
+    }
+}
+
+function drawPopUps() {
+    popUpManager.drawPopUps(ctx);
 }
 
 
@@ -218,13 +237,14 @@ function cameraFollow() {
         currentCoords.y = me.y;
     }
 }
+
 function printMousePos(event) {
-   /*console.log(
-        "clientX: " + (event.clientX+camera.x) +
-        " - clientY: " + (event.clientY+camera.y));
-   console.log(currentCoords.x,currentCoords.y);
-   console.log(currentCoords.x,currentCoords.y);*/
-   createProjectile(projectiles,"arrow2",me.x,me.y,me.x,me.y,event.clientX+camera.x,event.clientY+camera.y,10 ,quadTree,players,gameTime)
+    /*console.log(
+         "clientX: " + (event.clientX+camera.x) +
+         " - clientY: " + (event.clientY+camera.y));
+    console.log(currentCoords.x,currentCoords.y);
+    console.log(currentCoords.x,currentCoords.y);*/
+    createProjectile(projectiles, "arrow2", me.x, me.y, me.x, me.y, event.clientX + camera.x, event.clientY + camera.y, 10, quadTree, players, gameTime)
 }
 
 document.getElementById("canvas").addEventListener("click", printMousePos);
@@ -266,20 +286,23 @@ function drawTiles(Xsize, Ysize, gridSize) {
         blockX += gridSize
     }
 }
+
 function drawMapFront(Xsize, Ysize, gridSize) {
     let meX = Math.floor(me.x);
     let meY = Math.floor(me.y);
     meX = meX - meX % gridSize;
     meY = meY - meY % gridSize;
-    let blockX = meX - gridSize * Xsize
+    let blockX = meX - gridSize * Xsize;
     if (blockX < 0) {
         blockX = 0;
     }
     for (; blockX <= meX + gridSize * Xsize; blockX += gridSize) {
         if (data.map[blockX] != null) {
 
-            let blockY = meY - gridSize * Ysize
-            if (blockY < 0) { blockY = 0;}
+            let blockY = meY - gridSize * Ysize;
+            if (blockY < 0) {
+                blockY = 0;
+            }
             for (; blockY <= meY + gridSize * Ysize; blockY += gridSize) {
                 let block = data.map[blockX][blockY];
                 if (block != null) {
@@ -313,6 +336,7 @@ $(window).keydown((key) => {
     keys[key.key] = true;
     if (key.key === "i") {
         gameState.inInventory = !gameState.inInventory;
+        socket.emit("inventory",);
     }
 });
 
@@ -341,21 +365,24 @@ function loadImagesThenAnimate(folders) {
         requestId = window.requestAnimationFrame(animate);
     });
 }
-function updateGameTime(gameTime,speed) {
+
+function updateGameTime(gameTime, speed) {
     gameTime = gameTime + speed;
     return gameTime
 }
+
 function sendProjectileServer(projectile) {
     //console.log("Sending to server")
     //console.log(projectile)
-    socket.emit("projectile",projectile)
+    socket.emit("projectile", projectile)
 }
-function drawImageRotation(image, x, y, scale, rotation,sin,cos) {
+
+function drawImageRotation(image, x, y, scale, rotation, sin, cos) {
     ctx.save()
     ctx.translate(x, y)
     //ctx.rotate(-projectiles[projectile].angle)
     //ctx.setTransform(scale, 0, 0, scale, x, y); // sets scale and origin
-    if(Math.asin(sin) <0){
+    if (Math.asin(sin) < 0) {
         ctx.rotate(-Math.acos(cos));
     } else {
         ctx.rotate(Math.acos(cos));
@@ -363,21 +390,22 @@ function drawImageRotation(image, x, y, scale, rotation,sin,cos) {
     /*console.log("arccos: "+radians_to_degrees(Math.acos(cos)));
     console.log("arcsin: "+radians_to_degrees(Math.asin(sin)));
     console.log("arctan: "+radians_to_degrees(Math.atan(sin/cos)));*/
-    ctx.drawImage(images[image],0,0);
+    ctx.drawImage(images[image], 0, 0);
     ctx.restore()
     ctx.save()
     ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
 
     //ctx.rotate(Math.atan(rotation));
-    ctx.fillRect(x+16, y+9, 7, 5);
+    ctx.fillRect(x + 16, y + 9, 7, 5);
 
     ctx.restore()
 }
-function radians_to_degrees(radians)
-{
+
+function radians_to_degrees(radians) {
     var pi = Math.PI;
-    return radians * (180/pi);
+    return radians * (180 / pi);
 }
+
 //////////////////////Editor//////////////////////////////////
 
 let editorMode = false;
@@ -401,7 +429,7 @@ function editorConfig() {
             window.cancelAnimationFrame(requestId);
             requestId = window.requestAnimationFrame(editor);
         } else {
-            $("#editor")[0].innerText = "Editor";
+            $("#editor")[0].innerText = "Collision Editor";
             $("#add")[0].style.display = "none";
             $("#imagename")[0].style.display = "none";
             $("#select")[0].style.display = "none";
@@ -521,6 +549,7 @@ function checkRectangleIndex(x, y) {
         }
     }
 }
+
 function drawPlayerCollision() {
     for (let key in players) {
         if (key === origin) {
@@ -545,6 +574,7 @@ function drawPlayerCollision() {
         ctx.restore()
     }
 }
+
 function drawMapCollision(map) {
     ctx.save()
     ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
@@ -555,6 +585,7 @@ function drawMapCollision(map) {
     }
     ctx.restore()
 }
+
 class Rectangle {
     constructor(x, y, w, h) {
         this.x = x;
@@ -563,8 +594,12 @@ class Rectangle {
         this.h = h;
     }
 }
+
 export {
     animate,
     sendProjectileServer,
-    drawImageRotation
+    drawImageRotation,
+    popUpManager
 }
+
+/////////////////////////Map Editor/////////////////////////////

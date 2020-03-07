@@ -48,13 +48,21 @@
             top: 30px;
             display: none;
         }
+        .unselectable{
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
     </style>
 </head>
 <body>
-<button id="editor">Editor</button>
-<button id="add">Add Rectangle</button>
-<button id="select">Select</button>
-<input type="text" id="imagename" placeholder="Image Name">
+<button id="editor" class="unselectable">Collision Editor</button>
+<button id="add" class="unselectable">Add Rectangle</button>
+<button id="select" class="unselectable">Select</button>
+<input type="text" id="imagename" placeholder="Image Name" class="unselectable">
 
 <canvas id="canvas"></canvas>
 </body>

@@ -75,7 +75,7 @@ class Player {
 }
 
 class Inventory {
-    constructor(itemFrameImg, x, y, xOff, yOff, xMul, yMul, gameState) {
+    constructor(itemFrameImg, x, y, xOff, yOff, xMul, yMul, gameState, images, frameWidth = itemFrameImg.width, frameHeight = itemFrameImg.height) {
         this.itemFrameImg = itemFrameImg;
         this.x = x;
         this.y = y;
@@ -84,24 +84,83 @@ class Inventory {
         this.xMul = xMul;
         this.yMul = yMul;
         this.gameState =  gameState;
+        this.images = images;
+        this.frameWidth = frameWidth;
+        this.frameHeight = frameHeight;
     }
     draw(_ctx, _camera){
         if(this.gameState.inInventory){
-            _ctx.globalAlpha = 0.8;
-            for (let x = 0; x < this.xMul; x++){
-                for (let y = 0; y < this.yMul; y++){
-                    let xReal = this.x + (x * (this.xOff + this.itemFrameImg.width)) + _camera.x;
-                    let yReal = this.y + (y * (this.yOff + this.itemFrameImg.height)) + _camera.y;
-                    _ctx.drawImage(this.itemFrameImg, xReal, yReal);
+            let xIndex = 0;
+            let yIndex = 0;
+            for (let item in this.gameState.inventory){
+                let xReal = this.x + (xIndex * (this.xOff + this.itemFrameImg.width)) + _camera.x;
+                let yReal = this.y + (yIndex * (this.yOff + this.itemFrameImg.height)) + _camera.y;
+                _ctx.drawImage(this.itemFrameImg, xReal, yReal, this.frameWidth, this.frameHeight);
+                _ctx.drawImage(this.images["sword"], xReal, yReal,this.frameWidth, this.frameHeight);
+                yIndex++;
+                if(yIndex >= this.yMul){
+                    yIndex = 0;
+                    xIndex++;
                 }
             }
-            _ctx.globalAlpha = 1;
+            for (;xIndex < this.xMul; xIndex++){
+                for (;yIndex < this.yMul; yIndex++){
+                    let xReal = this.x + (xIndex * (this.xOff + this.itemFrameImg.width)) + _camera.x;
+                    let yReal = this.y + (yIndex * (this.yOff + this.itemFrameImg.height)) + _camera.y;
+                    _ctx.drawImage(this.itemFrameImg, xReal, yReal, this.frameWidth, this.frameHeight);
+                }
+                yIndex = 0;
+            }
         }
+    }
+}
+
+class PopUpManager{
+    constructor() {
+        this.popUps = [];
+    }
+
+    addPopUp(x, y, value){
+        let popUp = {x:x,y:y,value:value,timestamp:Date.now(),age:300};
+        this.popUps.push(popUp);
+    }
+    drawPopUps(_ctx){
+        let currentTime = Date.now();
+        _ctx.font = "20px Georgia";
+        _ctx.fillStyle = "red";
+        for (let popUpIndex in this.popUps){
+            let popUp = this.popUps[popUpIndex];
+            if(currentTime - popUp.timestamp < popUp.age){
+                _ctx.fillText(popUp.value, popUp.x + 15, popUp.y);
+                popUp.y--;
+            }
+            else{
+                this.popUps.splice(popUpIndex, 1);
+            }
+        }
+    }
+}
+
+class Bar {
+    constructor(img, x, y, value, maxValue){
+        this.img = img;
+        this.x = x;
+        this.y = y;
+        this.value = value;
+        this.maxValue = maxValue;
+    }
+    update(value){
+        this.value = value;
+    }
+    draw(_ctx, _camera){
+        _ctx.drawImage(this.img, this.x + _camera.x, this.y + _camera.y, this.value / this.maxValue * this.img.width, this.img.height);
     }
 }
 export {
     Camera,
     Inventory,
     Animation,
-    Player
+    Player,
+    PopUpManager,
+    Bar
 }
