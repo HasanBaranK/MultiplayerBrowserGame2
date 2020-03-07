@@ -169,6 +169,10 @@ class ImageList{
         this.yOff = yOff;
     }
     draw(_ctx, _camera){
+
+        _ctx.fillStyle = "white";
+        _ctx.fillRect(this.x - 2 + _camera.x, this.y - 2 + _camera.y, this.xLimit * (this.imgWidth + this.xOff), 20 * (this.imgHeight + this.yOff));
+        _ctx.fillStyle = "black";
         let xIndex = 0;
         let yIndex = 0;
         for (let imageName in this.images){
@@ -183,9 +187,6 @@ class ImageList{
             }
         }
         yIndex++;
-        _ctx.beginPath();
-        _ctx.rect(this.x - 2, this.y - 2, this.xLimit * (this.imgWidth + this.xOff), yIndex * (this.imgHeight + this.yOff));
-        _ctx.stroke();
     }
 }
 export {

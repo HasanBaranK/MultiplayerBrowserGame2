@@ -172,6 +172,15 @@ io.on('connection', function (socket) {
         projectiles.push(projectile);
         io.emit("projectile",obj);
     });
+    socket.on('newmap', function(data){
+        fs.writeFile("./maps/" + data.name, JSON.stringify(data, null, 4), (err) => {
+            if (err) {
+                console.error(err);
+                return;
+            };
+            console.log("File has been created");
+        });
+    });
     socket.on('disconnect', function(evt){
        delete players[socket.id];
     });

@@ -21,6 +21,7 @@ $(document).ready(init);
 /////////////////////GAME FUNCTIONS//////////////////////////////
 
 function init() {
+    document.addEventListener('contextmenu', event => event.preventDefault());
     cvs = $("#canvas")[0];
     ctx = cvs.getContext("2d");
     mapcvs = $("#mapeditorcanvas")[0];
@@ -480,6 +481,12 @@ $(window).keydown((key) => {
         gameState.inInventory = !gameState.inInventory;
         socket.emit("inventory",);
     }
+    if (key.key === "m" && mapEditorMode) {
+        drawSelection = true;
+    }
+    if(key.key === "l" && mapEditorMode){
+        socket.emit("newmap", {name:Date.now().toString(),gridSize:gridSize, gridBasedMapArray:gridBasedMapArray, nonGridBasedMapArray:nonGridBasedMapArray})
+    }
 });
 
 $(window).keyup((key) => {
@@ -760,7 +767,17 @@ let imageListObject;
 let imageIndexes = [];
 let imageSelected = undefined;
 let gridSize = 32;
-let createdMapArray = [];
+let gridBasedMapArray = [];
+let nonGridBasedMapArray = [];
+let mapXMin = 0;
+let mapXMax = 32 * 20;
+let mapYMin = 0;
+let mapYMax = 32 * 20;
+let delayForMovingCam = Date.now();
+let drawSelection = true;
+let leftMouseClicked = false;
+let rightMouseClicked = false;
+let delayForRightClick = Date.now();
 
 function mapEditor() {
     updateMapEditor();
@@ -768,24 +785,81 @@ function mapEditor() {
 }
 
 function updateMapEditor() {
-    imageListObject.draw(actualmapctx, mapEditorCamera);
-    if (keys["a"]) {
-        mapEditorCamera.move(actualmapctx, -gridSize, 0);
+    let currentTime = Date.now();
+    let allowedToMove = false;
+    if (currentTime - delayForMovingCam > 50) {
+        allowedToMove = true;
+        delayForMovingCam = Date.now();
     }
-    if (keys["d"]) {
-        mapEditorCamera.move(actualmapctx, gridSize, 0);
+    actualmapctx.clearRect(mapEditorCamera.x, mapEditorCamera.y, actualmapcvs.width + mapEditorCamera.x, actualmapcvs.height + mapEditorCamera.y);
+
+    if (allowedToMove) {
+        if (keys["a"]) {
+            mapEditorCamera.move(actualmapctx, -gridSize, 0);
+            if (mapEditorCamera.x < 0 || mapEditorCamera.y < 0) {
+                mapEditorCamera.move(actualmapctx, gridSize, 0);
+            }
+        }
+        if (keys["d"]) {
+            mapEditorCamera.move(actualmapctx, gridSize, 0);
+            if (mapEditorCamera.x < 0 || mapEditorCamera.y < 0) {
+                mapEditorCamera.move(actualmapctx, -gridSize, 0);
+            }
+        }
+        if (keys["s"]) {
+            mapEditorCamera.move(actualmapctx, 0, gridSize);
+            if (mapEditorCamera.x < 0 || mapEditorCamera.y < 0) {
+                mapEditorCamera.move(actualmapctx, 0, -gridSize);
+            }
+        }
+        if (keys["w"]) {
+            mapEditorCamera.move(actualmapctx, 0, -gridSize);
+            if (mapEditorCamera.x < 0 || mapEditorCamera.y < 0) {
+                mapEditorCamera.move(actualmapctx, 0, gridSize);
+            }
+        }
     }
-    if (keys["s"]) {
-        mapEditorCamera.move(actualmapctx, 0, gridSize);
+    if (leftMouseClicked) {
+        if (imageSelected) {
+            let placedXGrid = (mousePosition.x + mapEditorCamera.x);
+            let placedYGrid = (mousePosition.y + mapEditorCamera.y);
+            placedXGrid = Math.floor((placedXGrid / gridSize)) * gridSize;
+            placedYGrid = Math.floor((placedYGrid / gridSize)) * gridSize;
+            if (!gridBasedMapArray[placedXGrid / gridSize]) {
+                gridBasedMapArray[placedXGrid / gridSize] = [];
+            }
+            gridBasedMapArray[placedXGrid / gridSize][placedYGrid / gridSize] = {
+                name: imageSelected,
+                x: placedXGrid,
+                y: placedYGrid
+            };
+        }
     }
-    if (keys["w"]) {
-        mapEditorCamera.move(actualmapctx, 0, -gridSize);
+    if (currentTime - delayForRightClick > 200) {
+        if (rightMouseClicked) {
+            if (imageSelected) {
+                if (!nonGridBasedMapArray[mousePosition.x + mapEditorCamera.x]) {
+                    nonGridBasedMapArray[mousePosition.x + mapEditorCamera.x] = [];
+                }
+                nonGridBasedMapArray[mousePosition.x + mapEditorCamera.x][mousePosition.y + mapEditorCamera.y] = {
+                    name: imageSelected,
+                    x: mousePosition.x + mapEditorCamera.x,
+                    y: mousePosition.y + mapEditorCamera.y
+                };
+            }
+        }
+
+        delayForRightClick = Date.now();
     }
 
     drawMapCreated();
+    drawMapCreatedNonGrid();
+    if (drawSelection) {
+        imageListObject.draw(actualmapctx, mapEditorCamera);
+    }
 
     if (imageSelected) {
-        actualmapctx.drawImage(imageSelected, mousePosition.x, mousePosition.y);
+        actualmapctx.drawImage(images[imageSelected], mousePosition.x + mapEditorCamera.x, mousePosition.y + mapEditorCamera.y, gridSize, gridSize);
     }
 }
 
@@ -794,23 +868,37 @@ function setUpImagesListForMapEditor() {
 }
 
 function drawGrid() {
-    actualmapctx.clearRect(0, 0, mapcvs.width, mapcvs.height);
     for (let x = 0; x < mapcvs.width; x++) {
         for (let y = 0; y < mapcvs.height; y++) {
-            actualmapctx.beginPath();
-            actualmapctx.rect(x * gridSize, y * gridSize, gridSize, gridSize);
-            actualmapctx.stroke();
+            mapctx.beginPath();
+            mapctx.rect(x * gridSize, y * gridSize, gridSize, gridSize);
+            mapctx.stroke();
         }
     }
 }
 
 function drawMapCreated() {
-    actualmapctx.clearRect(mapEditorCamera.x, mapEditorCamera.y, actualmapcvs.width + mapEditorCamera.x, actualmapcvs.height + mapEditorCamera.y);
-
-    for (let createdMapIndex in createdMapArray) {
-        let createdMap = createdMapArray[createdMapIndex];
-        actualmapctx.drawImage(images[createdMap.name], createdMap.x, createdMap.y);
+    for (let x in gridBasedMapArray) {
+        for (let y in gridBasedMapArray[x]) {
+            let thing = gridBasedMapArray[x][y];
+            actualmapctx.drawImage(images[thing.name], thing.x, thing.y, gridSize, gridSize);
+        }
     }
+    actualmapctx.beginPath();
+    actualmapctx.rect(mapXMin, mapYMin, mapXMax, mapYMax);
+    actualmapctx.stroke();
+}
+
+function drawMapCreatedNonGrid() {
+    for (let x in nonGridBasedMapArray) {
+        for (let y in nonGridBasedMapArray[x]) {
+            let thing = nonGridBasedMapArray[x][y];
+            actualmapctx.drawImage(images[thing.name], thing.x, thing.y);
+        }
+    }
+    actualmapctx.beginPath();
+    actualmapctx.rect(mapXMin, mapYMin, mapXMax, mapYMax);
+    actualmapctx.stroke();
 }
 
 
@@ -836,7 +924,30 @@ function mapEditorConfig() {
             requestId = window.requestAnimationFrame(animate);
         }
     });
-    $("#mapeditorcanvas").click(() => {
+    $("#mapeditorcanvas").contextmenu((evt) => {
+        if (imageSelected) {
+            if (!nonGridBasedMapArray[mousePosition.x + mapEditorCamera.x]) {
+                nonGridBasedMapArray[mousePosition.x + mapEditorCamera.x] = [];
+            }
+            nonGridBasedMapArray[mousePosition.x + mapEditorCamera.x][mousePosition.y + mapEditorCamera.y] = {
+                name: imageSelected,
+                x: mousePosition.x + mapEditorCamera.x,
+                y: mousePosition.y + mapEditorCamera.y
+            };
+        }
+    });
+    $("#mapeditorcanvas").mouseup((evt) => {
+        leftMouseClicked = false;
+        rightMouseClicked = false;
+    });
+    $("#mapeditorcanvas").mousedown((evt) => {
+        if (evt.button === 2) {
+            rightMouseClicked = true;
+        } else if (evt.button === 0) {
+            leftMouseClicked = true;
+        }
+    });
+    $("#mapeditorcanvas").click((evt) => {
         let imgWidth = 32;
         let imgHeight = 32;
         let x = 10;
@@ -846,36 +957,47 @@ function mapEditorConfig() {
         let xIndex = 0;
         let yIndex = 0;
         let xLimit = 10;
-        for (let imageName in images) {
-            let image = images[imageName];
-            let xReal = x + (xIndex * (xOff + imgWidth)) + camera.x;
-            let yReal = y + (yIndex * (yOff + imgHeight)) + camera.y;
-            if (mousePosition.x >= xReal && mousePosition.x <= xReal + imgWidth && mousePosition.y >= yReal && mousePosition.y < yReal + imgHeight) {
-                imageSelected = image;
-                console.log(imageName)
-            }
-            xIndex++;
-            if (xIndex === xLimit) {
-                yIndex++;
-                xIndex = 0;
+        if (drawSelection) {
+            for (let imageName in images) {
+                let xReal = x + (xIndex * (xOff + imgWidth)) + camera.x;
+                let yReal = y + (yIndex * (yOff + imgHeight)) + camera.y;
+                if (mousePosition.x >= xReal && mousePosition.x <= xReal + imgWidth && mousePosition.y >= yReal && mousePosition.y < yReal + imgHeight) {
+                    imageSelected = imageName;
+                    drawSelection = false;
+                    console.log(imageSelected)
+                }
+                xIndex++;
+                if (xIndex === xLimit) {
+                    yIndex++;
+                    xIndex = 0;
+                }
             }
         }
-        if(imageSelected){
+        if (imageSelected) {
             let placedXGrid = (mousePosition.x + mapEditorCamera.x);
-            let placedYGrid = (mousePosition.y + mapEditorCamera.x);
-            placedXGrid = (placedXGrid / gridSize) * gridSize;
-            placedYGrid = (placedYGrid / gridSize) * gridSize;
-            createdMapArray.push({name: imageSelected.name, x: placedXGrid, y: placedYGrid})
+            let placedYGrid = (mousePosition.y + mapEditorCamera.y);
+            placedXGrid = Math.floor((placedXGrid / gridSize)) * gridSize;
+            placedYGrid = Math.floor((placedYGrid / gridSize)) * gridSize;
+            if (!gridBasedMapArray[placedXGrid / gridSize]) {
+                gridBasedMapArray[placedXGrid / gridSize] = [];
+            }
+            gridBasedMapArray[placedXGrid / gridSize][placedYGrid / gridSize] = {
+                name: imageSelected,
+                x: placedXGrid,
+                y: placedYGrid
+            };
         }
-        console.log(createdMapArray);
     });
     $("#mapeditorcanvas").mousemove(function (evt) {
         mousePosition.x = evt.offsetX || evt.layerX;
         mousePosition.y = evt.offsetY || evt.layerY;
-        mousePosition.x = mousePosition.x + camera.x;
-        mousePosition.y = mousePosition.y + camera.y;
-        console.log(mousePosition);
     });
 }
 
 
+
+//
+//
+//
+//
+///1000 LINES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
