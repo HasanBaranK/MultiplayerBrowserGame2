@@ -1,15 +1,18 @@
 /////////////////////INITIALIZATION CODE//////////////////////////
-import {Camera, Player, Inventory, PopUpManager, Bar} from "./classes.js";
+import {Camera, Player, Inventory, PopUpManager, Bar, ImageList} from "./classes.js";
 import {initializeQuadTree, move, cloneMe} from "./collision.js";
 import {calculateAllProjectiles, createProjectile} from "./projectiles.js";
 
 let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promises = [], players = {}, me = undefined,
-    currentCoords = {}, animator = {state: "idle"}, uis = {}, gameState = {}, popUpManager = new PopUpManager();
+    currentCoords = {}, animator = {state: "idle"}, uis = {}, gameState = {}, popUpManager = new PopUpManager(),
+    vendors = {};
 let camera = new Camera(0, 0, 0);
+let mapEditorCamera = new Camera(0,0,0);
 let requestId;
 let quadTree = {};
 let projectiles = [];
 let gameTime = 0;
+let mapcvs, mapctx;
 
 
 $(document).ready(init);
@@ -19,8 +22,11 @@ $(document).ready(init);
 function init() {
     cvs = $("#canvas")[0];
     ctx = cvs.getContext("2d");
+    mapcvs = $("#mapeditorcanvas")[0];
+    mapctx = mapcvs.getContext("2d");
 
-    editorConfig(ctx, cvs, camera, requestId);
+    editorConfig();
+    mapEditorConfig();
     configure();
 
     socket = io.connect({reconnectionDelay: 1000, reconnection: false});
@@ -28,7 +34,8 @@ function init() {
         socket.emit("getimages", {});
         socket.on("data", (res) => {
             data = res;
-            gameTime = res.gameTime
+            gameTime = res.gameTime;
+            vendors = res.vendors;
             quadTree = initializeQuadTree(quadTree, data.collisionMap);
             //quadTree = data.quadtree;
             socket.emit("newplayer", {});
@@ -80,6 +87,14 @@ function configure() {
     cvs.width = window.innerWidth;
     cvs.height = window.innerHeight;
     cvs.style.border = 'solid black 1px';
+    cvs.style.position = "absolute";
+    cvs.zIndex = 10;
+
+    mapcvs.width = window.innerWidth;
+    mapcvs.height = window.innerHeight;
+    mapcvs.style.border = 'solid black 1px';
+    mapcvs.style.position = "absolute";
+    mapcvs.style.zIndex = 0;
 
     currentCoords.x = cvs.width / 2 - 16;
     currentCoords.y = cvs.height / 2 - 16;
@@ -359,10 +374,12 @@ function printMousePos(event) {
          " - clientY: " + (event.clientY+camera.y));
     console.log(currentCoords.x,currentCoords.y);
     console.log(currentCoords.x,currentCoords.y);*/
-    createProjectile(projectiles, "arrow2", me.x, me.y, me.x, me.y, event.clientX + camera.x, event.clientY + camera.y, 10, quadTree, players, gameTime)
+    if (!mapEditorMode && !editorMode) {
+        createProjectile(projectiles, "arrow2", me.x, me.y, me.x, me.y, event.clientX + camera.x, event.clientY + camera.y, 10, quadTree, players, gameTime)
+    }
 }
 
-document.getElementById("canvas").addEventListener("click", printMousePos);
+document.getElementById("mapeditorcanvas").addEventListener("click", printMousePos);
 
 function drawTiles(Xsize, Ysize, gridSize) {
     let meX = Math.floor(me.x);
@@ -476,6 +493,7 @@ function loadImagesThenAnimate(folders) {
     }
     Promise.all(promises).then(() => {
         setUpAnimations();
+        setUpImagesListForMapEditor();
         setUpUI();
         requestId = window.requestAnimationFrame(animate);
     });
@@ -537,6 +555,7 @@ function editorConfig() {
     $("#editor").click(() => {
         if (!editorMode) {
             $("#editor")[0].innerText = "Game";
+            $("#mapeditor")[0].style.display = "none";
             $("#add")[0].style.display = "block";
             $("#imagename")[0].style.display = "block";
             $("#select")[0].style.display = "block";
@@ -547,6 +566,7 @@ function editorConfig() {
             requestId = window.requestAnimationFrame(editor);
         } else {
             $("#editor")[0].innerText = "Collision Editor";
+            $("#mapeditor")[0].style.display = "block";
             $("#add")[0].style.display = "none";
             $("#imagename")[0].style.display = "none";
             $("#select")[0].style.display = "none";
@@ -566,7 +586,7 @@ function editorConfig() {
         imageName = $("#imagename")[0].value;
     });
 
-    $("#canvas").click((evt) => {
+    $("#mapeditorcanvas").click((evt) => {
         mousePosition.x = evt.offsetX || evt.layerX;
         mousePosition.y = evt.offsetY || evt.layerY;
         checkRectangleIndex(mousePosition.x + camera.x, mousePosition.y + camera.y);
@@ -721,52 +741,97 @@ export {
 }
 
 /////////////////////////Map Editor/////////////////////////////
-// let mapEditorMode = false;
-// let mapMousePosition = {};
-// let mapImageName;
-// let mapTimebefore = Date.now();
-// let mapTimenow = Date.now();
-//
-// function mapEditorConfig() {
-//     $("#mapeditor").click(() => {
-//         if (!editorMode) {
-//             $("#editor")[0].innerText = "Game";
-//             $("#mapeditor")[0].style.display = "none";
-//             $("#add")[0].style.display = "block";
-//             $("#imagename")[0].style.display = "block";
-//             $("#select")[0].style.display = "block";
-//             editorMode = true;
-//             ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
-//             camera.set(ctx, 0, 0);
-//             window.cancelAnimationFrame(requestId);
-//             requestId = window.requestAnimationFrame(editor);
-//         } else {
-//             $("#editor")[0].innerText = "Collision Editor";
-//             $("#mapeditor")[0].style.display = "none";
-//             $("#add")[0].style.display = "none";
-//             $("#imagename")[0].style.display = "none";
-//             $("#select")[0].style.display = "none";
-//             editorMode = false;
-//             ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
-//             camera.restore(ctx);
-//             window.cancelAnimationFrame(requestId);
-//             requestId = window.requestAnimationFrame(animate);
-//         }
-//     });
-//
-//     $("#add").click(() => {
-//         addRectangle(camera.x + cvs.width / 2 - 50, camera.y + cvs.height / 2 - 50, 100, 100);
-//     });
-//
-//     $("#select").click(() => {
-//         imageName = $("#imagename")[0].value;
-//     });
-//
-//     $("#canvas").click((evt) => {
-//         mousePosition.x = evt.offsetX || evt.layerX;
-//         mousePosition.y = evt.offsetY || evt.layerY;
-//         checkRectangleIndex(mousePosition.x + camera.x, mousePosition.y + camera.y);
-//     });
-// }
-//
-//
+let mapEditorMode = false;
+let mapMousePosition = {};
+let mapImageName;
+let mapTimebefore = Date.now();
+let mapTimenow = Date.now();
+let imageListObject;
+let imageIndexes = [];
+let imageSelected = undefined;
+let gridSize = 32;
+
+function mapEditor() {
+    updateMapEditor();
+    requestId = requestAnimationFrame(mapEditor);
+}
+
+function updateMapEditor() {
+    ctx.clearRect(camera.x, camera.y, cvs.width + camera.x, cvs.height + camera.y);
+    imageListObject.draw(ctx, camera);
+    if (imageSelected) {
+        ctx.drawImage(imageSelected, mousePosition.x, mousePosition.y);
+    }
+}
+
+function setUpImagesListForMapEditor() {
+    imageListObject = new ImageList(images, 10, 100, 32, 32, 10, 5, 5);
+}
+
+function drawGrid(){
+    for (let x = 0; x < cvs.width; x++) {
+        for (let y = 0; y < cvs.height; y++){
+            ctx.beginPath();
+            ctx.rect(x * gridSize, y * gridSize, gridSize, gridSize);
+            ctx.stroke();
+        }
+    }
+}
+
+
+function mapEditorConfig() {
+    $("#mapeditor").click(() => {
+        if (!mapEditorMode) {
+            $("#editor")[0].style.display = "none";
+            $("#mapeditor")[0].innerText = "Game";
+            mapEditorMode = true;
+            ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
+            camera.set(ctx, 0, 0);
+            window.cancelAnimationFrame(requestId);
+            requestId = window.requestAnimationFrame(mapEditor);
+        } else {
+            $("#editor")[0].style.display = "block";
+            $("#mapeditor")[0].innerText = "Map Editor";
+            mapEditorMode = false;
+            ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
+            camera.restore(ctx);
+            drawGrid();
+            window.cancelAnimationFrame(requestId);
+            requestId = window.requestAnimationFrame(animate);
+        }
+    });
+    $("#mapeditorcanvas").click(() => {
+        let imgWidth = 32;
+        let imgHeight = 32;
+        let x = 10;
+        let y = 100;
+        let xOff = 5;
+        let yOff = 5;
+        let xIndex = 0;
+        let yIndex = 0;
+        let xLimit = 10;
+        for (let imageName in images) {
+            let image = images[imageName];
+            let xReal = x + (xIndex * (xOff + imgWidth)) + camera.x;
+            let yReal = y + (yIndex * (yOff + imgHeight)) + camera.y;
+            if (mousePosition.x >= xReal && mousePosition.x <= xReal + imgWidth && mousePosition.y >= yReal && mousePosition.y < yReal + imgHeight) {
+                imageSelected = image;
+                console.log(imageName)
+            }
+            xIndex++;
+            if (xIndex === xLimit) {
+                yIndex++;
+                xIndex = 0;
+            }
+        }
+    });
+    $("#mapeditorcanvas").mousemove(function (evt) {
+        mousePosition.x = evt.offsetX || evt.layerX;
+        mousePosition.y = evt.offsetY || evt.layerY;
+        mousePosition.x = mousePosition.x + camera.x;
+        mousePosition.y = mousePosition.y + camera.y;
+        console.log(mousePosition);
+    });
+}
+
+
