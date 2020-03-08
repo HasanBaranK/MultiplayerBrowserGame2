@@ -99,7 +99,7 @@ addVendors("KFC", 150, 150, {chicken: 10});
 //addItems(numCoins, "coin");
 
 // Starts the server.
-server.listen(5000, function () {
+server.listen(port, function () {
     console.log('Starting server on port 5000');
 });
 let socket2;
