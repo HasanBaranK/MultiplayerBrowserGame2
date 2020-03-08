@@ -103,7 +103,7 @@ function init() {
 
 
             }
-            if(me.isDead){
+            if(me && me.isDead){
                 isInDeadScreen = true;
             }
         });
