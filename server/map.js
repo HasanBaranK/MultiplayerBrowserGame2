@@ -1,6 +1,7 @@
 module.exports = {
     generateMap,
-    myGrid
+    myGrid,
+    mapParser
 }
 function generateMap(startX, startY, sizeX, sizeY, biomeType, gridSizeX, gridSizeY,rectangles) {
 
@@ -156,4 +157,39 @@ function myGrid(x, y, gridSize) {
         y: gridy
     }
     return position
+}
+function mapParser(filename, rectangles) {
+    var fs = require('fs');
+    var obj;
+    let nonGridArray;
+    let gridBasedArray;
+    let collisionMap = []
+
+    let data = fs.readFileSync(filename, 'utf8');
+    obj = JSON.parse(data);
+    nonGridArray = obj.nonGridBasedMapArray;
+    gridBasedArray = obj.gridBasedMapArray;
+    for (let i = 0; i < nonGridArray.length; i++) {
+        let name = nonGridArray[i].name
+        if (rectangles[name]) {
+            rectangles[name].forEach(
+                element => {
+                    let collisionObject = {
+                        x: element.x,
+                        y: element.y,
+                        width: element.width,
+                        height: element.height,
+                    }
+                    let index = collisionMap.push(collisionObject)
+                }
+            )
+        }
+    }
+    let maps = {
+        map: gridBasedArray,
+        treeMap: nonGridArray,
+        collisionMap: collisionMap,
+    }
+
+    return maps;
 }

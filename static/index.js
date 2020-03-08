@@ -141,10 +141,10 @@ function setUpUI() {
 function update() {
     cameraFollow();
     ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
-    drawTiles(14, 16, 64);
+    drawTiles2(14, 16, 64);
     //drawMapBack(14, 16, 64);
     drawPlayer();
-    drawMapFront(14, 16, 64);
+    drawMapFront2(14, 16, 64);
     calculateAllProjectiles(projectiles, gameTime, quadTree, players)
     for (let ui in uis) {
         uis[ui].draw(ctx, camera);
@@ -429,6 +429,29 @@ function drawTiles(Xsize, Ysize, gridSize) {
         blockX += gridSize
     }
 }
+function drawTiles2(Xsize, Ysize, gridSize) {
+    let meX = Math.floor(me.x);
+    let meY = Math.floor(me.y);
+    meX = meX - meX % gridSize;
+    meY = meY - meY % gridSize;
+    let blockX = meX - gridSize * Xsize
+    if (blockX < 0) {
+        blockX = 0;
+    }
+
+    //console.log(blockX + "," + blockY)
+    for (let x in data.map) {
+        for (let y in data.map[x]) {
+            let thing = data.map[x][y];
+            if(thing !== null ){
+            if(thing.tile !== null ) {
+                ctx.drawImage(images[thing.tile], thing.x, thing.y, 64, 64);
+            }
+            }
+        }
+    }
+
+}
 
 function drawMapFront(Xsize, Ysize, gridSize) {
     let meX = Math.floor(me.x);
@@ -465,7 +488,22 @@ function drawMapFront(Xsize, Ysize, gridSize) {
 
 
 }
+function drawMapFront2(Xsize, Ysize, gridSize) {
+    let meX = Math.floor(me.x);
+    let meY = Math.floor(me.y);
+    meX = meX - meX % gridSize;
+    meY = meY - meY % gridSize;
+    let blockX = meX - gridSize * Xsize;
+    if (blockX < 0) {
+        blockX = 0;
+    }
+    for (let x in data.treeMap) {
+        let thing = data.treeMap[x];
+        ctx.drawImage(images[thing.name], thing.x, thing.y);
+    }
 
+
+}
 ////////////////HTML EVENTS CODE////////////////////////
 
 // window.addEventListener("resize", () => {
@@ -486,6 +524,11 @@ $(window).keydown((key) => {
     }
     if(key.key === "l" && mapEditorMode){
         socket.emit("newmap", {name:Date.now().toString(),gridSize:gridSize, gridBasedMapArray:gridBasedMapArray, nonGridBasedMapArray:nonGridBasedMapArray})
+    }
+    if(key.key === "z" && mapEditorMode){
+        if(nonGridBasedMapArray.length > 0){
+            nonGridBasedMapArray.splice(nonGridBasedMapArray.length - 1, 1);
+        }
     }
 });
 
@@ -766,13 +809,13 @@ let mapTimenow = Date.now();
 let imageListObject;
 let imageIndexes = [];
 let imageSelected = undefined;
-let gridSize = 32;
+let gridSize = 64;
 let gridBasedMapArray = [];
 let nonGridBasedMapArray = [];
 let mapXMin = 0;
-let mapXMax = 32 * 20;
+let mapXMax = gridSize * 100;
 let mapYMin = 0;
-let mapYMax = 32 * 20;
+let mapYMax = gridSize * 100;
 let delayForMovingCam = Date.now();
 let drawSelection = true;
 let leftMouseClicked = false;
@@ -829,7 +872,7 @@ function updateMapEditor() {
                 gridBasedMapArray[placedXGrid / gridSize] = [];
             }
             gridBasedMapArray[placedXGrid / gridSize][placedYGrid / gridSize] = {
-                name: imageSelected,
+                tile: imageSelected,
                 x: placedXGrid,
                 y: placedYGrid
             };
@@ -838,14 +881,11 @@ function updateMapEditor() {
     if (currentTime - delayForRightClick > 200) {
         if (rightMouseClicked) {
             if (imageSelected) {
-                if (!nonGridBasedMapArray[mousePosition.x + mapEditorCamera.x]) {
-                    nonGridBasedMapArray[mousePosition.x + mapEditorCamera.x] = [];
-                }
-                nonGridBasedMapArray[mousePosition.x + mapEditorCamera.x][mousePosition.y + mapEditorCamera.y] = {
+                nonGridBasedMapArray.push({
                     name: imageSelected,
                     x: mousePosition.x + mapEditorCamera.x,
                     y: mousePosition.y + mapEditorCamera.y
-                };
+                });
             }
         }
 
@@ -881,7 +921,7 @@ function drawMapCreated() {
     for (let x in gridBasedMapArray) {
         for (let y in gridBasedMapArray[x]) {
             let thing = gridBasedMapArray[x][y];
-            actualmapctx.drawImage(images[thing.name], thing.x, thing.y, gridSize, gridSize);
+            actualmapctx.drawImage(images[thing.tile], thing.x, thing.y, gridSize, gridSize);
         }
     }
     actualmapctx.beginPath();
@@ -891,10 +931,8 @@ function drawMapCreated() {
 
 function drawMapCreatedNonGrid() {
     for (let x in nonGridBasedMapArray) {
-        for (let y in nonGridBasedMapArray[x]) {
-            let thing = nonGridBasedMapArray[x][y];
-            actualmapctx.drawImage(images[thing.name], thing.x, thing.y);
-        }
+        let thing = nonGridBasedMapArray[x];
+        actualmapctx.drawImage(images[thing.name], thing.x, thing.y);
     }
     actualmapctx.beginPath();
     actualmapctx.rect(mapXMin, mapYMin, mapXMax, mapYMax);
@@ -926,14 +964,11 @@ function mapEditorConfig() {
     });
     $("#mapeditorcanvas").contextmenu((evt) => {
         if (imageSelected) {
-            if (!nonGridBasedMapArray[mousePosition.x + mapEditorCamera.x]) {
-                nonGridBasedMapArray[mousePosition.x + mapEditorCamera.x] = [];
-            }
-            nonGridBasedMapArray[mousePosition.x + mapEditorCamera.x][mousePosition.y + mapEditorCamera.y] = {
+            nonGridBasedMapArray.push({
                 name: imageSelected,
                 x: mousePosition.x + mapEditorCamera.x,
                 y: mousePosition.y + mapEditorCamera.y
-            };
+            });
         }
     });
     $("#mapeditorcanvas").mouseup((evt) => {
@@ -982,7 +1017,7 @@ function mapEditorConfig() {
                 gridBasedMapArray[placedXGrid / gridSize] = [];
             }
             gridBasedMapArray[placedXGrid / gridSize][placedYGrid / gridSize] = {
-                name: imageSelected,
+                tile: imageSelected,
                 x: placedXGrid,
                 y: placedYGrid
             };
