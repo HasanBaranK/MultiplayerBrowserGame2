@@ -60,7 +60,7 @@ function findClosestTarget(mob, players, searchDistance,projectiles,quadTree,gam
                 target.x = playerX;
                 target.y = playerY;
                 selected = object;
-                if(distanceSmallest<250){
+                if(distanceSmallest<375){
                     attackProjectile(io,mob,object,projectiles,quadTree,gameTime)
                 }
             }

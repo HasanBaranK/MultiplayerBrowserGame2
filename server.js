@@ -58,9 +58,9 @@ let matrix = mapFunctions.createGridForPathFinder(quadtree,mapSizeX,mapSizeY,pat
 let mobs = [];
 let gridPathFinder = mobFunctions.initializePathFinder(matrix);
 for (let i = 0; i < 10; i++) {
-    let rand = Math.floor(Math.random() * 90)
+    let rand = Math.floor(Math.random() * 70)+1
     //console.log(rand)
-    let rand2 = Math.floor(Math.random() * 90)+2
+    let rand2 = Math.floor(Math.random() * 40)+4
     //console.log(rand2)
     mobs.push(mobFunctions.createMob(rand*pathFindingGridSize,rand2*pathFindingGridSize,1,1,null,matrix));
 }
@@ -232,7 +232,6 @@ io.on('connection', function (socket) {
     });
     socket.on('addCoin', function (data){
         coinsForPlayers[socket.id]+=(Number(data.amount));
-        console.log(coinsForPlayers);
         socket.emit("coins",{amount:coinsForPlayers[socket.id]});
     });
     socket.on('inventory', function(){
@@ -300,11 +299,11 @@ setInterval(function () {
 }, 1000/60);
 setInterval(function () {
     //console.time('calculation');
-    if(mobs.length < 3){
-        for (let i = 0; i < 2; i++) {
-            let rand = Math.floor(Math.random() * 10)
+    if(mobs.length <9){
+        for (let i = 0; i < 1; i++) {
+            let rand = Math.floor(Math.random() * 70) +1
             //console.log(rand)
-            let rand2 = Math.floor(Math.random() * 10)+2
+            let rand2 = Math.floor(Math.random() * 30)+4
             //console.log(rand2)
             mobs.push(mobFunctions.createMob(rand*pathFindingGridSize,rand2*pathFindingGridSize,1,1,null,matrix));
         }
