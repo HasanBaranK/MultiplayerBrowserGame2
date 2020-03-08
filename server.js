@@ -29,15 +29,20 @@ let rawdata = fs.readFileSync("server/collisions.json");
 let rectangles = JSON.parse(rawdata);
 let coinsForPlayers = [];
 
-//generate Map
 let mapSizeX = 3000;
 let mapSizeY = 3000;
 let pathFindingGridSize = 32;
-let maps = mapFunctions.generateMap(0,0,mapSizeX,mapSizeY,"Forest",gridSizeX,gridSizeY,rectangles)
+//generate Map
+//let maps = mapFunctions.generateMap(0,0,1000,1000,"Forest",gridSizeX,gridSizeY,rectangles)
+//Promise pro = new Promise(mapFunctions.mapParser("./maps/1583654261340",rectangles));
+//pro.then()
+let maps = mapFunctions.mapParser("./maps/1583657834029",rectangles);
 let map = maps.map
 let collisionMap = maps.collisionMap
 let treeMap = maps.treeMap
-let quadtree = maps.quadtree
+console.log(map);
+let quadtree ;//= maps.quadtree
+
 let projectiles = []
 //game time
 let gameTime = 0;
@@ -243,6 +248,15 @@ io.on('connection', function (socket) {
         };
         projectiles.push(projectile);
         io.emit("projectile",obj);
+    });
+    socket.on('newmap', function(data){
+        fs.writeFile("./maps/" + data.name, JSON.stringify(data, null, 4), (err) => {
+            if (err) {
+                console.error(err);
+                return;
+            };
+            console.log("File has been created");
+        });
     });
     socket.on('disconnect', function(evt){
        delete players[socket.id];

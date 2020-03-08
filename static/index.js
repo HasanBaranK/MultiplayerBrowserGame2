@@ -1,15 +1,19 @@
 /////////////////////INITIALIZATION CODE//////////////////////////
-import {Camera, Player, Inventory, PopUpManager, Bar} from "./classes.js";
+import {Camera, Player, Inventory, PopUpManager, Bar, ImageList} from "./classes.js";
 import {initializeQuadTree, move, cloneMe} from "./collision.js";
 import {calculateAllProjectiles, createProjectile} from "./projectiles.js";
 
 let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promises = [], players = {}, me = undefined,
-    currentCoords = {}, animator = {state: "idle"}, uis = {}, gameState = {}, popUpManager = new PopUpManager(), vendors = {};
+    currentCoords = {}, animator = {state: "idle"}, uis = {}, gameState = {}, popUpManager = new PopUpManager(),
+    vendors = {};
 let camera = new Camera(0, 0, 0);
+let mapEditorCamera = new Camera(0, 0, 0);
 let requestId;
 let quadTree = {};
 let projectiles = [];
 let gameTime = 0;
+let mapcvs, mapctx;
+let actualmapcvs, actualmapctx;
 let actualMousePosition = {};
 let items = [];
 let inStatsScreen = false;
@@ -26,10 +30,16 @@ $(document).ready(init);
 /////////////////////GAME FUNCTIONS//////////////////////////////
 
 function init() {
+    document.addEventListener('contextmenu', event => event.preventDefault());
     cvs = $("#canvas")[0];
     ctx = cvs.getContext("2d");
+    mapcvs = $("#mapeditorcanvas")[0];
+    mapctx = mapcvs.getContext("2d");
+    actualmapcvs = $("#actualmapcanvas")[0];
+    actualmapctx = mapcvs.getContext("2d");
 
-    editorConfig(ctx, cvs, camera, requestId);
+    editorConfig();
+    mapEditorConfig();
     configure();
 
     socket = io.connect({reconnectionDelay: 1000, reconnection: false});
@@ -90,6 +100,8 @@ function init() {
                 updated.x = me.x;
                 updated.y = me.y;
                 me = updated;
+
+
             }
             if(me.isDead){
                 isInDeadScreen = true;
@@ -102,6 +114,21 @@ function configure() {
     cvs.width = window.innerWidth;
     cvs.height = window.innerHeight;
     cvs.style.border = 'solid black 1px';
+    cvs.style.position = "absolute";
+    cvs.zIndex = 9;
+
+    mapcvs.width = window.innerWidth;
+    mapcvs.height = window.innerHeight;
+    mapcvs.style.border = 'solid black 1px';
+    mapcvs.style.position = "absolute";
+    mapcvs.style.zIndex = 10;
+
+    actualmapcvs.width = window.innerWidth;
+    actualmapcvs.height = window.innerHeight;
+    actualmapcvs.style.border = 'solid black 1px';
+    actualmapcvs.style.position = "absolute";
+    actualmapcvs.style.zIndex = 8;
+
 
     currentCoords.x = cvs.width / 2 - 16;
     currentCoords.y = cvs.height / 2 - 16;
@@ -155,12 +182,12 @@ function setUpUI() {
 function update() {
     cameraFollow();
     ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
-    drawTiles(14, 16, 64);
+    drawTiles2(14, 16, 64);
     //drawMapBack(14, 16, 64);
     drawPlayer();
     drawPlayers();
     drawMobs(mobs)
-    drawMapFront(14, 16, 64);
+    drawMapFront2(14, 16, 64);
     calculateAllProjectiles(projectiles, gameTime, quadTree, players)
     for (let ui in uis) {
         uis[ui].draw(ctx, camera);
@@ -168,6 +195,7 @@ function update() {
     //Debug
 
     //drawPlayerCollision()
+
     drawVendors();
     drawItems();
 
@@ -387,16 +415,20 @@ function predictPlayerPosition(player) {
                 try {
 
                     if (isNaN(predictedMoveX)) {
+                        console.log("preMoveX" + predictedMoveX)
                     } else {
                         predicted.x += predictedMoveX;
+                        console.log("predx:" + predicted.x)
                     }
                 } catch (e) {
                     console.log("error1")
                 }
                 try {
                     if (isNaN(predictedMoveY)) {
+                        console.log("preMoveY" + predictedMoveY)
                     } else {
                         predicted.y += predictedMoveY;
+                        console.log("predy:" + predicted.y)
                     }
                     predicted.y += predictedMoveY;
                 } catch (e) {
@@ -432,6 +464,8 @@ function drawPlayers() {
             } catch (e) {
                 //  console.log("important")
             }
+
+
         }
     }
 }
@@ -473,10 +507,12 @@ function printMousePos(event) {
          " - clientY: " + (event.clientY+camera.y));
     console.log(currentCoords.x,currentCoords.y);
     console.log(currentCoords.x,currentCoords.y);*/
-    createProjectile(projectiles, "arrow2", me.x, me.y, me.x, me.y, event.clientX + camera.x, event.clientY + camera.y, 10, quadTree, players, gameTime)
+    if (!mapEditorMode && !editorMode) {
+        createProjectile(projectiles, "arrow2", me.x, me.y, me.x, me.y, event.clientX + camera.x, event.clientY + camera.y, 10, quadTree, players, gameTime)
+    }
 }
 
-document.getElementById("canvas").addEventListener("click", printMousePos);
+document.getElementById("mapeditorcanvas").addEventListener("click", printMousePos);
 
 function drawTiles(Xsize, Ysize, gridSize) {
     let meX = Math.floor(me.x);
@@ -515,6 +551,29 @@ function drawTiles(Xsize, Ysize, gridSize) {
         blockX += gridSize
     }
 }
+function drawTiles2(Xsize, Ysize, gridSize) {
+    let meX = Math.floor(me.x);
+    let meY = Math.floor(me.y);
+    meX = meX - meX % gridSize;
+    meY = meY - meY % gridSize;
+    let blockX = meX - gridSize * Xsize
+    if (blockX < 0) {
+        blockX = 0;
+    }
+
+    //console.log(blockX + "," + blockY)
+    for (let x in data.map) {
+        for (let y in data.map[x]) {
+            let thing = data.map[x][y];
+            if(thing !== null ){
+            if(thing.tile !== null ) {
+                ctx.drawImage(images[thing.tile], thing.x, thing.y, 64, 64);
+            }
+            }
+        }
+    }
+
+}
 
 function drawMapFront(Xsize, Ysize, gridSize) {
     let meX = Math.floor(me.x);
@@ -551,7 +610,22 @@ function drawMapFront(Xsize, Ysize, gridSize) {
 
 
 }
+function drawMapFront2(Xsize, Ysize, gridSize) {
+    let meX = Math.floor(me.x);
+    let meY = Math.floor(me.y);
+    meX = meX - meX % gridSize;
+    meY = meY - meY % gridSize;
+    let blockX = meX - gridSize * Xsize;
+    if (blockX < 0) {
+        blockX = 0;
+    }
+    for (let x in data.treeMap) {
+        let thing = data.treeMap[x];
+        ctx.drawImage(images[thing.name], thing.x, thing.y);
+    }
 
+
+}
 ////////////////HTML EVENTS CODE////////////////////////
 
 // window.addEventListener("resize", () => {
@@ -567,6 +641,17 @@ $(window).keydown((key) => {
     if (key.key === "i") {
         gameState.inInventory = !gameState.inInventory;
         socket.emit("inventory",);
+    }
+    if (key.key === "m" && mapEditorMode) {
+        drawSelection = true;
+    }
+    if(key.key === "l" && mapEditorMode){
+        socket.emit("newmap", {name:Date.now().toString(),gridSize:gridSize, gridBasedMapArray:gridBasedMapArray, nonGridBasedMapArray:nonGridBasedMapArray})
+    }
+    if(key.key === "z" && mapEditorMode){
+        if(nonGridBasedMapArray.length > 0){
+            nonGridBasedMapArray.splice(nonGridBasedMapArray.length - 1, 1);
+        }
     }
     if(keyPressed === "q"){
         inStatsScreen = !inStatsScreen;
@@ -594,6 +679,7 @@ function loadImagesThenAnimate(folders) {
     }
     Promise.all(promises).then(() => {
         setUpAnimations();
+        setUpImagesListForMapEditor();
         setUpUI();
         requestId = window.requestAnimationFrame(animate);
     });
@@ -655,6 +741,7 @@ function editorConfig() {
     $("#editor").click(() => {
         if (!editorMode) {
             $("#editor")[0].innerText = "Game";
+            $("#mapeditor")[0].style.display = "none";
             $("#add")[0].style.display = "block";
             $("#imagename")[0].style.display = "block";
             $("#select")[0].style.display = "block";
@@ -665,6 +752,7 @@ function editorConfig() {
             requestId = window.requestAnimationFrame(editor);
         } else {
             $("#editor")[0].innerText = "Collision Editor";
+            $("#mapeditor")[0].style.display = "block";
             $("#add")[0].style.display = "none";
             $("#imagename")[0].style.display = "none";
             $("#select")[0].style.display = "none";
@@ -684,7 +772,7 @@ function editorConfig() {
         imageName = $("#imagename")[0].value;
     });
 
-    $("#canvas").click((evt) => {
+    $("#mapeditorcanvas").click((evt) => {
         mousePosition.x = evt.offsetX || evt.layerX;
         mousePosition.y = evt.offsetY || evt.layerY;
         checkRectangleIndex(mousePosition.x + camera.x, mousePosition.y + camera.y);
@@ -873,52 +961,238 @@ export {
 }
 
 /////////////////////////Map Editor/////////////////////////////
-// let mapEditorMode = false;
-// let mapMousePosition = {};
-// let mapImageName;
-// let mapTimebefore = Date.now();
-// let mapTimenow = Date.now();
+let mapEditorMode = false;
+let mapMousePosition = {};
+let mapImageName;
+let mapTimebefore = Date.now();
+let mapTimenow = Date.now();
+let imageListObject;
+let imageIndexes = [];
+let imageSelected = undefined;
+let gridSize = 64;
+let gridBasedMapArray = [];
+let nonGridBasedMapArray = [];
+let mapXMin = 0;
+let mapXMax = gridSize * 100;
+let mapYMin = 0;
+let mapYMax = gridSize * 100;
+let delayForMovingCam = Date.now();
+let drawSelection = true;
+let leftMouseClicked = false;
+let rightMouseClicked = false;
+let delayForRightClick = Date.now();
+
+function mapEditor() {
+    updateMapEditor();
+    requestId = requestAnimationFrame(mapEditor);
+}
+
+function updateMapEditor() {
+    let currentTime = Date.now();
+    let allowedToMove = false;
+    if (currentTime - delayForMovingCam > 50) {
+        allowedToMove = true;
+        delayForMovingCam = Date.now();
+    }
+    actualmapctx.clearRect(mapEditorCamera.x, mapEditorCamera.y, actualmapcvs.width + mapEditorCamera.x, actualmapcvs.height + mapEditorCamera.y);
+
+    if (allowedToMove) {
+        if (keys["a"]) {
+            mapEditorCamera.move(actualmapctx, -gridSize, 0);
+            if (mapEditorCamera.x < 0 || mapEditorCamera.y < 0) {
+                mapEditorCamera.move(actualmapctx, gridSize, 0);
+            }
+        }
+        if (keys["d"]) {
+            mapEditorCamera.move(actualmapctx, gridSize, 0);
+            if (mapEditorCamera.x < 0 || mapEditorCamera.y < 0) {
+                mapEditorCamera.move(actualmapctx, -gridSize, 0);
+            }
+        }
+        if (keys["s"]) {
+            mapEditorCamera.move(actualmapctx, 0, gridSize);
+            if (mapEditorCamera.x < 0 || mapEditorCamera.y < 0) {
+                mapEditorCamera.move(actualmapctx, 0, -gridSize);
+            }
+        }
+        if (keys["w"]) {
+            mapEditorCamera.move(actualmapctx, 0, -gridSize);
+            if (mapEditorCamera.x < 0 || mapEditorCamera.y < 0) {
+                mapEditorCamera.move(actualmapctx, 0, gridSize);
+            }
+        }
+    }
+    if (leftMouseClicked) {
+        if (imageSelected) {
+            let placedXGrid = (mousePosition.x + mapEditorCamera.x);
+            let placedYGrid = (mousePosition.y + mapEditorCamera.y);
+            placedXGrid = Math.floor((placedXGrid / gridSize)) * gridSize;
+            placedYGrid = Math.floor((placedYGrid / gridSize)) * gridSize;
+            if (!gridBasedMapArray[placedXGrid / gridSize]) {
+                gridBasedMapArray[placedXGrid / gridSize] = [];
+            }
+            gridBasedMapArray[placedXGrid / gridSize][placedYGrid / gridSize] = {
+                tile: imageSelected,
+                x: placedXGrid,
+                y: placedYGrid
+            };
+        }
+    }
+    if (currentTime - delayForRightClick > 200) {
+        if (rightMouseClicked) {
+            if (imageSelected) {
+                nonGridBasedMapArray.push({
+                    name: imageSelected,
+                    x: mousePosition.x + mapEditorCamera.x,
+                    y: mousePosition.y + mapEditorCamera.y
+                });
+            }
+        }
+
+        delayForRightClick = Date.now();
+    }
+
+    drawMapCreated();
+    drawMapCreatedNonGrid();
+    if (drawSelection) {
+        imageListObject.draw(actualmapctx, mapEditorCamera);
+    }
+
+    if (imageSelected) {
+        actualmapctx.drawImage(images[imageSelected], mousePosition.x + mapEditorCamera.x, mousePosition.y + mapEditorCamera.y, gridSize, gridSize);
+    }
+}
+
+function setUpImagesListForMapEditor() {
+    imageListObject = new ImageList(images, 10, 100, 32, 32, 10, 5, 5);
+}
+
+function drawGrid() {
+    for (let x = 0; x < mapcvs.width; x++) {
+        for (let y = 0; y < mapcvs.height; y++) {
+            mapctx.beginPath();
+            mapctx.rect(x * gridSize, y * gridSize, gridSize, gridSize);
+            mapctx.stroke();
+        }
+    }
+}
+
+function drawMapCreated() {
+    for (let x in gridBasedMapArray) {
+        for (let y in gridBasedMapArray[x]) {
+            let thing = gridBasedMapArray[x][y];
+            actualmapctx.drawImage(images[thing.tile], thing.x, thing.y, gridSize, gridSize);
+        }
+    }
+    actualmapctx.beginPath();
+    actualmapctx.rect(mapXMin, mapYMin, mapXMax, mapYMax);
+    actualmapctx.stroke();
+}
+
+function drawMapCreatedNonGrid() {
+    for (let x in nonGridBasedMapArray) {
+        let thing = nonGridBasedMapArray[x];
+        actualmapctx.drawImage(images[thing.name], thing.x, thing.y);
+    }
+    actualmapctx.beginPath();
+    actualmapctx.rect(mapXMin, mapYMin, mapXMax, mapYMax);
+    actualmapctx.stroke();
+}
+
+
+function mapEditorConfig() {
+    $("#mapeditor").click(() => {
+        if (!mapEditorMode) {
+            $("#editor")[0].style.display = "none";
+            $("#mapeditor")[0].innerText = "Game";
+            mapEditorMode = true;
+            ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
+            camera.set(ctx, 0, 0);
+            drawGrid();
+            window.cancelAnimationFrame(requestId);
+            requestId = window.requestAnimationFrame(mapEditor);
+        } else {
+            $("#editor")[0].style.display = "block";
+            $("#mapeditor")[0].innerText = "Map Editor";
+            mapEditorMode = false;
+            ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
+            camera.restore(ctx);
+            mapctx.clearRect(0, 0, mapcvs.width, mapcvs.height);
+            window.cancelAnimationFrame(requestId);
+            requestId = window.requestAnimationFrame(animate);
+        }
+    });
+    $("#mapeditorcanvas").contextmenu((evt) => {
+        if (imageSelected) {
+            nonGridBasedMapArray.push({
+                name: imageSelected,
+                x: mousePosition.x + mapEditorCamera.x,
+                y: mousePosition.y + mapEditorCamera.y
+            });
+        }
+    });
+    $("#mapeditorcanvas").mouseup((evt) => {
+        leftMouseClicked = false;
+        rightMouseClicked = false;
+    });
+    $("#mapeditorcanvas").mousedown((evt) => {
+        if (evt.button === 2) {
+            rightMouseClicked = true;
+        } else if (evt.button === 0) {
+            leftMouseClicked = true;
+        }
+    });
+    $("#mapeditorcanvas").click((evt) => {
+        let imgWidth = 32;
+        let imgHeight = 32;
+        let x = 10;
+        let y = 100;
+        let xOff = 5;
+        let yOff = 5;
+        let xIndex = 0;
+        let yIndex = 0;
+        let xLimit = 10;
+        if (drawSelection) {
+            for (let imageName in images) {
+                let xReal = x + (xIndex * (xOff + imgWidth)) + camera.x;
+                let yReal = y + (yIndex * (yOff + imgHeight)) + camera.y;
+                if (mousePosition.x >= xReal && mousePosition.x <= xReal + imgWidth && mousePosition.y >= yReal && mousePosition.y < yReal + imgHeight) {
+                    imageSelected = imageName;
+                    drawSelection = false;
+                    console.log(imageSelected)
+                }
+                xIndex++;
+                if (xIndex === xLimit) {
+                    yIndex++;
+                    xIndex = 0;
+                }
+            }
+        }
+        if (imageSelected) {
+            let placedXGrid = (mousePosition.x + mapEditorCamera.x);
+            let placedYGrid = (mousePosition.y + mapEditorCamera.y);
+            placedXGrid = Math.floor((placedXGrid / gridSize)) * gridSize;
+            placedYGrid = Math.floor((placedYGrid / gridSize)) * gridSize;
+            if (!gridBasedMapArray[placedXGrid / gridSize]) {
+                gridBasedMapArray[placedXGrid / gridSize] = [];
+            }
+            gridBasedMapArray[placedXGrid / gridSize][placedYGrid / gridSize] = {
+                tile: imageSelected,
+                x: placedXGrid,
+                y: placedYGrid
+            };
+        }
+    });
+    $("#mapeditorcanvas").mousemove(function (evt) {
+        mousePosition.x = evt.offsetX || evt.layerX;
+        mousePosition.y = evt.offsetY || evt.layerY;
+    });
+}
+
+
+
 //
-// function mapEditorConfig() {
-//     $("#mapeditor").click(() => {
-//         if (!editorMode) {
-//             $("#editor")[0].innerText = "Game";
-//             $("#mapeditor")[0].style.display = "none";
-//             $("#add")[0].style.display = "block";
-//             $("#imagename")[0].style.display = "block";
-//             $("#select")[0].style.display = "block";
-//             editorMode = true;
-//             ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
-//             camera.set(ctx, 0, 0);
-//             window.cancelAnimationFrame(requestId);
-//             requestId = window.requestAnimationFrame(editor);
-//         } else {
-//             $("#editor")[0].innerText = "Collision Editor";
-//             $("#mapeditor")[0].style.display = "none";
-//             $("#add")[0].style.display = "none";
-//             $("#imagename")[0].style.display = "none";
-//             $("#select")[0].style.display = "none";
-//             editorMode = false;
-//             ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
-//             camera.restore(ctx);
-//             window.cancelAnimationFrame(requestId);
-//             requestId = window.requestAnimationFrame(animate);
-//         }
-//     });
-//
-//     $("#add").click(() => {
-//         addRectangle(camera.x + cvs.width / 2 - 50, camera.y + cvs.height / 2 - 50, 100, 100);
-//     });
-//
-//     $("#select").click(() => {
-//         imageName = $("#imagename")[0].value;
-//     });
-//
-//     $("#canvas").click((evt) => {
-//         mousePosition.x = evt.offsetX || evt.layerX;
-//         mousePosition.y = evt.offsetY || evt.layerY;
-//         checkRectangleIndex(mousePosition.x + camera.x, mousePosition.y + camera.y);
-//     });
-// }
 //
 //
+//
+///1000 LINES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

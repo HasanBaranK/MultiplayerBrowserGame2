@@ -156,11 +156,45 @@ class Bar {
         _ctx.drawImage(this.img, this.x + _camera.x, this.y + _camera.y, this.value / this.maxValue * this.img.width, this.img.height);
     }
 }
+
+class ImageList{
+    constructor(images, x, y, imgWidth, imgHeight, xLimit, xOff=0, yOff=0) {
+        this.images = images;
+        this.x = x;
+        this.y = y;
+        this.imgWidth = imgWidth;
+        this.imgHeight = imgHeight;
+        this.xLimit = xLimit;
+        this.xOff = xOff;
+        this.yOff = yOff;
+    }
+    draw(_ctx, _camera){
+
+        _ctx.fillStyle = "white";
+        _ctx.fillRect(this.x - 2 + _camera.x, this.y - 2 + _camera.y, this.xLimit * (this.imgWidth + this.xOff), 20 * (this.imgHeight + this.yOff));
+        _ctx.fillStyle = "black";
+        let xIndex = 0;
+        let yIndex = 0;
+        for (let imageName in this.images){
+            let image = this.images[imageName];
+            let xReal = this.x + (xIndex * (this.xOff + this.imgWidth)) + _camera.x;
+            let yReal = this.y + (yIndex * (this.yOff + this.imgHeight)) + _camera.y;
+            _ctx.drawImage(image, xReal, yReal, this.imgWidth, this.imgHeight);
+            xIndex++;
+            if(xIndex == this.xLimit){
+                yIndex++;
+                xIndex = 0;
+            }
+        }
+        yIndex++;
+    }
+}
 export {
     Camera,
     Inventory,
     Animation,
     Player,
     PopUpManager,
-    Bar
+    Bar,
+    ImageList
 }
