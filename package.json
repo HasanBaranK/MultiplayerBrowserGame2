@@ -1,6 +1,9 @@
 {
   "name": "MultiplayerBrowserGame2-a",
   "version": "1.0.0",
+  "scripts": {
+    "start": "node server.js"
+  },
   "dependencies": {
     "easystarjs": "^0.4.3",
     "express": "^4.17.1",

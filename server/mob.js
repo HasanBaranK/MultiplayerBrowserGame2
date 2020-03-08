@@ -52,7 +52,7 @@ function findClosestTarget(mob, players, searchDistance,projectiles,quadTree,gam
         console.log(mob.x)
         console.log(mob.y)*/
         let distance = Math.sqrt((mob.x - playerX) * (mob.x - playerX) + (mob.y - playerY) * (mob.y - playerY))
-        console.log(distance)
+        //console.log(distance)
         if (distanceSmallest === null || distanceSmallest > distance && distance <= searchDistance) {
             //console.log(distance)
             if(distance < searchDistance) {
@@ -60,7 +60,7 @@ function findClosestTarget(mob, players, searchDistance,projectiles,quadTree,gam
                 target.x = playerX;
                 target.y = playerY;
                 selected = object;
-                if(distanceSmallest<200){
+                if(distanceSmallest<250){
                     attackProjectile(io,mob,object,projectiles,quadTree,gameTime)
                 }
             }
@@ -171,12 +171,12 @@ function calculateAllMobs(io,mobs, players, matrix, gridSize, grid,projectiles,q
 }
 function calculateMob(mob,players,gridSize,gridBackup,i,projectiles,quadTree,gameTime,io){
 
-    findClosestTarget(mob, players, 300,projectiles,quadTree,gameTime,io);
+    findClosestTarget(mob, players, 350,projectiles,quadTree,gameTime,io);
 
     if (mob.target !== null && !isNaN(mob.target.x) && !isNaN(mob.target.y)) {
         try {
 
-
+                //console.log("calculating")
                 findPathForHero(mob, gridSize, gridBackup, i);
 
         } catch (e) {
@@ -247,8 +247,10 @@ function moveMobs(io,mobs, gridSize) {
                         return;
                     }*/
 
-                    mob.x = nextLoc[0] * gridSize;
-                    mob.y = nextLoc[1] * gridSize;
+                    let nextX = nextLoc[0] * gridSize;
+                    let nextY = nextLoc[1] * gridSize;
+                    mob.x = nextX//MathHelper.lerp(mob.x,nextX,5);
+                    mob.y = nextY//MathHelper.lerp(mob.x,nextX,5);
                     path.shift();
                 }else {
                     return;
@@ -258,7 +260,27 @@ function moveMobs(io,mobs, gridSize) {
     }
     io.emit("mobs", mobs);
 }
+var MathHelper = {
+    // Get a value between two values
+    clamp: function (value, min, max) {
 
+        if (value < min) {
+            return min;
+        }
+        else if (value > max) {
+            return max;
+        }
+
+        return value;
+    },
+    // Get the linear interpolation between two value
+    lerp: function (value1, value2, amount) {
+        amount = amount < 0 ? 0 : amount;
+        amount = amount > 1 ? 1 : amount;
+        return value1 + (value2 - value1) * amount;
+    }
+
+};
 module.exports = {
     calculateAllMobs,
     createMob,

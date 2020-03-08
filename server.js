@@ -26,6 +26,7 @@ let gridSizeY =64;
 //get collisions
 let rawdata = fs.readFileSync("server/collisions.json");
 let rectangles = JSON.parse(rawdata);
+let coinsForPlayers = [];
 
 //generate Map
 let mapSizeX = 3000;
@@ -52,9 +53,9 @@ let mobs = [];
 let gridPathFinder = mobFunctions.initializePathFinder(matrix);
 for (let i = 0; i < 10; i++) {
     let rand = Math.floor(Math.random() * 90)
-    console.log(rand)
+    //console.log(rand)
     let rand2 = Math.floor(Math.random() * 90)
-    console.log(rand2)
+    //console.log(rand2)
     mobs.push(mobFunctions.createMob(rand*pathFindingGridSize,rand2*pathFindingGridSize,1,1,null,matrix));
 }
 
@@ -83,20 +84,18 @@ function addVendors (name, x, y, items) {
     vendors[name] = {name: name, x: x, y: y, items:items};
 }
 
-function addItem (name, minX, minY, maxX, maxY) {
-    items.push({name: name, x: minX + Math.random() * (maxX - minX), y: minY + Math.random() * (maxY - minY)});
-}
+
 
 addVendors("KFC", 150, 150, {chicken: 10});
 
-function addItems (numItems, itemName) {
-    for (let i = 0; i < numItems; i++) {
-        addItem(itemName, 0, 0, 300, 300);
-    }
-}
+// function addItems (numItems, itemName) {
+//     for (let i = 0; i < numItems; i++) {
+//         addItem(itemName, 0, 0, 300, 300);
+//     }
+// }
 
-numCoins = 20;
-addItems(numCoins, "coin");
+//numCoins = 20;
+//addItems(numCoins, "coin");
 
 // Starts the server.
 server.listen(5000, function () {
@@ -133,7 +132,6 @@ io.on('connection', function (socket) {
             xp: 0,
             xpToLevel: 1000,
             level: 1,
-            coins:0,
             healingDelay: 0,
             lastPressTime: 0,
             lastJumpTime: 0,
@@ -143,6 +141,7 @@ io.on('connection', function (socket) {
         };
         inventories[socket.id] = {};
         inventories[socket.id]["sword"] = 1;
+        coinsForPlayers[socket.id] = 0;
         let player = players[socket.id];
         socket.join('players');
         console.log("Player joined");
@@ -220,6 +219,16 @@ io.on('connection', function (socket) {
         };
         socket.emit("players",obj);
     });
+    socket.on('deleteItem', function (data){
+        let indexToDelete = Number(data.itemIndex);
+        items.splice(indexToDelete,1);
+        io.emit("items",items);
+    });
+    socket.on('addCoin', function (data){
+        coinsForPlayers[socket.id]+=(Number(data.amount));
+        console.log(coinsForPlayers);
+        socket.emit("coins",{amount:coinsForPlayers[socket.id]});
+    });
     socket.on('inventory', function(){
       socket.emit("inventory", inventories[socket.id]);
     });
@@ -270,7 +279,7 @@ function movePlayers(players) {
 setInterval(function () {
     //movePlayers(players)
     gameTime = timeFunctions.updateGameTime(gameTime, 1)
-    hitCheckFunctions.calculateAllProjectiles(io,projectiles,gameTime,players,quadtree,mobs);
+    hitCheckFunctions.calculateAllProjectiles(io,projectiles,gameTime,players,quadtree,mobs,items);
     //mobFunctions.calculateAllMobs(mobs,players,matrix,pathFindingGridSize,gridPathFinder)
     //mobFunctions.moveMobs(mobs,gridPathFinder)
 }, 1000/60);
@@ -280,10 +289,10 @@ setInterval(function () {
     //console.timeEnd('calculation');
 
     //mobFunctions.moveMobs(mobs,gridPathFinder)
-    console.log(mobs.length)
+    //console.log(mobs.length)
 }, 1000);
 setInterval(function () {
 
     mobFunctions.moveMobs(io, mobs, pathFindingGridSize);
     //mobFunctions.moveMobs(mobs,gridPathFinder)
-}, 200);
+}, 300);

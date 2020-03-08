@@ -88,7 +88,7 @@ function calculateAllProjectiles(projectiles, currentGameTime, quadTree,players)
             if (object !== false) {
                 projectiles.splice(i, 1);
                 //tree hit   dothis
-                console.log(object);
+                //console.log(object);
                 console.log("hit");
                 continue;
             }

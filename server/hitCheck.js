@@ -1,10 +1,11 @@
 //server side
 let collisionFunctions = require("./collision.js");
+let mainFunctions = require("../server.js");
 module.exports = {
     calculateAllProjectiles
 }
 
-function calculateAllProjectiles(io,projectiles, currentGameTime, players,quadTree,mobs) {
+function calculateAllProjectiles(io,projectiles, currentGameTime, players,quadTree,mobs,items) {
 
     for (let i = 0; i < projectiles.length; i++) {
         let projectile = projectiles[i];
@@ -84,6 +85,7 @@ function calculateAllProjectiles(io,projectiles, currentGameTime, players,quadTr
                         mobs.splice(object.key, 1);
                         //delete mobs[object.key]
                         console.log("dead")
+                        addItem(io,items,"coin",object.mob.x,object.mob.y,object.mob.x +5,object.mob.y +5);
                     }
                     io.emit("mobs", mobs);
                     continue;
@@ -181,4 +183,9 @@ function checkIfHitMob(projectile,mobs) {
     }
 
     return false;
+}
+function addItem (io,items,name, minX, minY, maxX, maxY) {
+    items.push({name: name, x: minX /*+ Math.random() * (maxX - minX)*/, y: minY /*+ Math.random() * (maxY - minY)*/});
+    console.log(items)
+    io.emit("items",items);
 }

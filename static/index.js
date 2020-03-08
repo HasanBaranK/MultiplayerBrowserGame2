@@ -13,6 +13,10 @@ let gameTime = 0;
 let actualMousePosition = {};
 let items = [];
 let inStatsScreen = false;
+let coins = 0;
+let isInDeadScreen = false;
+let fadingDeathScreen = 0;
+let fadingDeathScreenInc = 0.01;
 
 let matrix = null;
 let mobs;
@@ -47,6 +51,9 @@ function init() {
             imageNames = res;
             socket.emit("getdata");
         });
+        socket.on("items", (res) => {
+            items = res;
+        });
         socket.on("joined", (res) => {
             loadImagesThenAnimate(imageNames);
             console.log("joined game");
@@ -60,16 +67,19 @@ function init() {
             projectiles.push(res.projectile)
 
         });
-        socket.on("inventory", (res) => {
+        socket.on("inventory", (res) => {a
             gameState.inventory = res;
         });
         socket.on("mobs", (res) => {
             mobs = res;
         });
+        socket.on("coins", (res) => {
+            coins = res.amount;
+        });
         socket.on("players", (res) => {
             players = res.players;
-            console.log(res.players)
-            console.log("playertimebefore" + gameTime)
+            //console.log(res.players)
+            //console.log("playertimebefore" + gameTime)
             gameTime = res.gameTime;
             mobs = res.mobs;
             if (me === undefined) {
@@ -80,10 +90,10 @@ function init() {
                 updated.x = me.x;
                 updated.y = me.y;
                 me = updated;
-
-
             }
-
+            if(me.isDead){
+                isInDeadScreen = true;
+            }
         });
     });
 }
@@ -171,6 +181,9 @@ function update() {
     }
     //drawMapCollision(data.collisionMap)
     //drawPlayerCollision()
+    if(isInDeadScreen){
+        drawDeadScreen();
+    }
 }
 function drawMobs(mobs){
     if(mobs !== null && mobs !== undefined){
@@ -181,6 +194,25 @@ function drawMobs(mobs){
         }
         ctx.restore()
     }
+}
+
+function drawDeadScreen(){
+    ctx.fillStyle = "rgba(0, 0, 0," + fadingDeathScreen + ")";
+    ctx.fillRect(camera.x,camera.y, cvs.width, cvs.height);
+    fadingDeathScreen += fadingDeathScreenInc;
+    console.log(fadingDeathScreen)
+    if(fadingDeathScreen >= 0.8){
+        fadingDeathScreenInc = 0;
+    }
+    ctx.fillStyle = "rgba(0, 0, 0, 1)";
+    ctx.fillText("",camera.x + cvs.width/2, camera.y + cvs.height/2)
+}
+
+function drawCoinsAmount(size = 32){
+    ctx.drawImage(images["coin"], (size+images["healthbar"].width + camera.x), (cvs.height + camera.y - size - 5), size, size);
+    ctx.fillStyle = "gold";
+    ctx.font = "34px Arial";
+    ctx.fillText(coins, (size+images["healthbar"].width + camera.x) + 50, (cvs.height + camera.y - size - 5) + 27)
 }
 
 
@@ -208,14 +240,14 @@ function drawItems () {
     for (let itemIndex in items) {
         let item = items[itemIndex];
         if (item.x >= me.x && item.x < me.x + me.width + 8 && item.y >= me.y && item.y < me.y + me.height + 8) {
-            items.splice(itemIndex, 1);
-            console.log(item);
+            //items.splice(itemIndex, 1);
             if (item.name === "coin") {
-                console.log(players[socket.id]);
+                socket.emit("deleteItem",{itemIndex:itemIndex});
+                socket.emit("addCoin",{amount:1});
             }
         }
         else {
-            ctx.drawImage(images[item.name], item.x, item.y, 8, 8);
+        ctx.drawImage(images[item.name], item.x, item.y, 8, 8);
         }
     }
 }
@@ -409,6 +441,7 @@ function drawUI() {
     for (let ui in uis) {
         uis[ui].draw(ctx, camera);
     }
+    drawCoinsAmount();
 }
 
 function drawPopUps() {
