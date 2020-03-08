@@ -91,7 +91,9 @@ function init() {
             //console.log(res.players)
             //console.log("playertimebefore" + gameTime)
             gameTime = res.gameTime;
-            mobs = res.mobs;
+            if(res.mobs){
+                mobs = res.mobs;
+            }
             if (me === undefined) {
                 me = players[socket.id]
 
@@ -229,7 +231,6 @@ function drawDeadScreen(){
     ctx.fillStyle = "rgba(0, 0, 0," + fadingDeathScreen + ")";
     ctx.fillRect(camera.x,camera.y, cvs.width, cvs.height);
     fadingDeathScreen += fadingDeathScreenInc;
-    console.log(fadingDeathScreen);
     if(fadingDeathScreen >= 0.8){
         fadingDeathScreenInc = 0;
     }

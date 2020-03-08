@@ -204,6 +204,7 @@ io.on('connection', function (socket) {
             players: players,
             mobs: mobs,
         };
+        //console.log(mobs.length);
         io.emit("players",obj);
 
     });
