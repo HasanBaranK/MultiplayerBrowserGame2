@@ -300,9 +300,6 @@ setInterval(function () {
 }, 1000/60);
 setInterval(function () {
     //console.time('calculation');
-    mobFunctions.calculateAllMobs(io,mobs,players,matrix,pathFindingGridSize,gridPathFinder,projectiles,quadtree,gameTime)
-    //console.timeEnd('calculation');
-
     if(mobs.length < 3){
         for (let i = 0; i < 2; i++) {
             let rand = Math.floor(Math.random() * 10)
@@ -313,6 +310,11 @@ setInterval(function () {
         }
         console.log("generatedMobs")
     }
+
+    mobFunctions.calculateAllMobs(io,mobs,players,matrix,pathFindingGridSize,gridPathFinder,projectiles,quadtree,gameTime)
+    //console.timeEnd('calculation');
+
+
     //mobFunctions.moveMobs(mobs,gridPathFinder)
     //console.log(mobs.length)
 }, 1000);
