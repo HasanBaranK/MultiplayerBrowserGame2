@@ -7,7 +7,8 @@ const fs = require('fs');
 const app = express();
 let server = require('http').createServer(app);
 let io = socketIO(server);
-app.set('port', 5000);
+const port = process.env.PORT || 5000;
+app.set('port', port);
 
 //Directory of static files
 const static_dir = 'static';
