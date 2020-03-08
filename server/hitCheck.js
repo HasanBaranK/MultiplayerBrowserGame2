@@ -162,8 +162,8 @@ function checkIfHitMob(projectile,mobs) {
         let offset = {
             x: 0,
             y: 0,
-            width: 32,
-            height: 32,
+            width: 64,
+            height: 64,
         }
         object.x += offset.x
         object.y += offset.y

@@ -214,11 +214,13 @@ function update() {
     }
 }
 function drawMobs(mobs){
+    console.log(mobs);
     if(mobs !== null && mobs !== undefined){
         ctx.save()
         ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
         for (let i = 0; i < mobs.length; i++) {
-            ctx.fillRect(mobs[i].x, mobs[i].y, 16, 16);
+            ctx.drawImage(images["archer"], 0, 0, 128, 128, mobs[i].x, mobs[i].y, 128,128);
+            //ctx.fillRect(mobs[i].x, mobs[i].y, 16, 16);
         }
         ctx.restore()
     }
@@ -228,12 +230,13 @@ function drawDeadScreen(){
     ctx.fillStyle = "rgba(0, 0, 0," + fadingDeathScreen + ")";
     ctx.fillRect(camera.x,camera.y, cvs.width, cvs.height);
     fadingDeathScreen += fadingDeathScreenInc;
-    console.log(fadingDeathScreen)
+    console.log(fadingDeathScreen);
     if(fadingDeathScreen >= 0.8){
         fadingDeathScreenInc = 0;
     }
     ctx.fillStyle = "rgba(0, 0, 0, 1)";
-    ctx.fillText("",camera.x + cvs.width/2, camera.y + cvs.height/2)
+    ctx.fillStyle = "rgba(255, 255, 255, 1)";
+    ctx.fillText("YOU ARE DEAD",camera.x + cvs.width/2 - 30, camera.y + cvs.height/2)
 }
 
 function drawCoinsAmount(size = 32){
@@ -281,7 +284,9 @@ function drawItems () {
 }
 
 setInterval(function () {
-    doTheMovement();
+    if(!isInDeadScreen){
+        doTheMovement();
+    }
     gameTime = updateGameTime(gameTime, 1);
 
 }, 1000 / 60);
@@ -336,24 +341,26 @@ function doTheMovement() {
 }
 
 function drawPlayer() {
-    if (keys["w"] && keys["d"]) {
-        animationChecker("runUPRIGHT");
-    } else if (keys["w"] && keys["a"]) {
-        animationChecker("runUPLEFT");
-    } else if (keys["s"] && keys["d"]) {
-        animationChecker("runDOWNRIGHT");
-    } else if (keys["s"] && keys["a"]) {
-        animationChecker("runDOWNLEFT");
-    } else if (keys["w"]) {
-        animationChecker("runUP");
-    } else if (keys["s"]) {
-        animationChecker("runDOWN");
-    } else if (keys["a"]) {
-        animationChecker("runLEFT");
-    } else if (keys["d"]) {
-        animationChecker("runRIGHT");
-    } else {
-        animationChecker("idle");
+    if(!isInDeadScreen){
+        if (keys["w"] && keys["d"]) {
+            animationChecker("runUPRIGHT");
+        } else if (keys["w"] && keys["a"]) {
+            animationChecker("runUPLEFT");
+        } else if (keys["s"] && keys["d"]) {
+            animationChecker("runDOWNRIGHT");
+        } else if (keys["s"] && keys["a"]) {
+            animationChecker("runDOWNLEFT");
+        } else if (keys["w"]) {
+            animationChecker("runUP");
+        } else if (keys["s"]) {
+            animationChecker("runDOWN");
+        } else if (keys["a"]) {
+            animationChecker("runLEFT");
+        } else if (keys["d"]) {
+            animationChecker("runRIGHT");
+        } else {
+            animationChecker("idle");
+        }
     }
 }
 
@@ -507,7 +514,7 @@ function printMousePos(event) {
          " - clientY: " + (event.clientY+camera.y));
     console.log(currentCoords.x,currentCoords.y);
     console.log(currentCoords.x,currentCoords.y);*/
-    if (!mapEditorMode && !editorMode) {
+    if (!mapEditorMode && !editorMode && !isInDeadScreen) {
         createProjectile(projectiles, "arrow2", me.x, me.y, me.x, me.y, event.clientX + camera.x, event.clientY + camera.y, 10, quadTree, players, gameTime)
     }
 }
