@@ -53,18 +53,18 @@ function calculateAllProjectiles(io,projectiles, currentGameTime, players,quadTr
             let object = collisionFunctions.checkCollision(obj, objects)
             if (object !== false) {
                 projectiles.splice(i, 1);
-                console.log("hit object");
+                //console.log("hit object");
                 continue;
             }
             object = checkIfHitPlayer(obj, players,projectile.origin)
             //console.log(object)
             if (object !== false) {
                 projectiles.splice(i, 1);
-                console.log("hit player");
+                //console.log("hit player");
                 object.health -= 10;
                 if (object.health <= 0) {
                     object.isDead = true;
-                    console.log("dead")
+                   // console.log("dead")
                 }
                 let obj = {
                     players:players,
@@ -79,12 +79,12 @@ function calculateAllProjectiles(io,projectiles, currentGameTime, players,quadTr
                 object = checkIfHitMob(obj, mobs)
                 if (object !== false) {
                     projectiles.splice(i, 1);
-                    console.log("hit mob");
+                    //console.log("hit mob");
                     object.mob.health -= 10;
                     if (object.mob.health <= 0) {
                         mobs.splice(object.key, 1);
                         //delete mobs[object.key]
-                        console.log("dead")
+                        //console.log("dead")
                         addItem(io,items,"coin",object.mob.x,object.mob.y,object.mob.x +5,object.mob.y +5);
                     }
                     io.emit("mobs", mobs);
@@ -186,6 +186,6 @@ function checkIfHitMob(projectile,mobs) {
 }
 function addItem (io,items,name, minX, minY, maxX, maxY) {
     items.push({name: name, x: minX /*+ Math.random() * (maxX - minX)*/, y: minY /*+ Math.random() * (maxY - minY)*/});
-    console.log(items)
+    //console.log(items)
     io.emit("items",items);
 }

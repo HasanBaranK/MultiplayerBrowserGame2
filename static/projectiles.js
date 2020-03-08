@@ -89,19 +89,19 @@ function calculateAllProjectiles(projectiles, currentGameTime, quadTree,players)
                 projectiles.splice(i, 1);
                 //tree hit   dothis
                 //console.log(object);
-                console.log("hit");
+                //console.log("hit");
                 continue;
             }
             object = checkIfHitPlayer(obj, players,projectile.origin)
             //console.log(object)
             if (object !== false) {
                 projectiles.splice(i, 1);
-                console.log("hit");
+                //console.log("hit");
                 popUpManager.addPopUp(object.x, object.y, 10);
                 object.health -= 10;
                 if (object.health <= 0) {
                     object.isDead = true;
-                    console.log("dead")
+                    //console.log("dead")
                 }
 
                 continue;

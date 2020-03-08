@@ -421,24 +421,18 @@ function predictPlayerPosition(player) {
                 try {
 
                     if (isNaN(predictedMoveX)) {
-                        console.log("preMoveX" + predictedMoveX)
                     } else {
                         predicted.x += predictedMoveX;
-                        console.log("predx:" + predicted.x)
                     }
                 } catch (e) {
-                    console.log("error1")
                 }
                 try {
                     if (isNaN(predictedMoveY)) {
-                        console.log("preMoveY" + predictedMoveY)
                     } else {
                         predicted.y += predictedMoveY;
-                        console.log("predy:" + predicted.y)
                     }
                     predicted.y += predictedMoveY;
                 } catch (e) {
-                    console.log("error2")
                 }
                 return predicted
             }
