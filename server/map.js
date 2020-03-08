@@ -178,8 +178,8 @@ function mapParser(filename, rectangles) {
             rectangles[name].forEach(
                 element => {
                     let collisionObject = {
-                        x: element.x,
-                        y: element.y,
+                        x: element.x +nonGridArray[i].x ,
+                        y: element.y+nonGridArray[i].y,
                         width: element.width,
                         height: element.height,
                     }

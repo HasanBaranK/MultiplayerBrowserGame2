@@ -36,11 +36,10 @@ let pathFindingGridSize = 32;
 //let maps = mapFunctions.generateMap(0,0,1000,1000,"Forest",gridSizeX,gridSizeY,rectangles)
 //Promise pro = new Promise(mapFunctions.mapParser("./maps/1583654261340",rectangles));
 //pro.then()
-let maps = mapFunctions.mapParser("./maps/1583657834029",rectangles);
+let maps = mapFunctions.mapParser("./maps/1583664958061",rectangles);
 let map = maps.map
 let collisionMap = maps.collisionMap
 let treeMap = maps.treeMap
-console.log(map);
 let quadtree ;//= maps.quadtree
 
 let projectiles = []
@@ -54,6 +53,7 @@ var items = [];
 let images = {};
 images = getImages(images)
 quadtree = collisionFunctions.initializeQuadTree(quadtree,collisionMap);
+//console.log(quadtree)
 let matrix = mapFunctions.createGridForPathFinder(quadtree,mapSizeX,mapSizeY,pathFindingGridSize);
 let mobs = [];
 let gridPathFinder = mobFunctions.initializePathFinder(matrix);

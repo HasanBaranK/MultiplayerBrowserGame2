@@ -52,7 +52,7 @@ function init() {
             items = res.items;
             matrix = data.matrix;
             mobs = data.mobs;
-            gameTime = res.gameTime
+            gameTime = res.gameTime;
             quadTree = initializeQuadTree(quadTree, data.collisionMap);
             //quadTree = data.quadtree;
             socket.emit("newplayer", {});
@@ -214,7 +214,6 @@ function update() {
     }
 }
 function drawMobs(mobs){
-    console.log(mobs);
     if(mobs !== null && mobs !== undefined){
         ctx.save()
         ctx.fillStyle = "rgba(0, 0, 0, 0.7)";

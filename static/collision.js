@@ -6,6 +6,7 @@ function initializeQuadTree(quadTree,collisionMap) {
         width: 8000,
         height: 8000
     }, 15, 6);
+
     for (let i = 0; i < collisionMap.length; i++) {
         let collision = collisionMap[i];
         quadTree.insert({
@@ -14,7 +15,9 @@ function initializeQuadTree(quadTree,collisionMap) {
             width: collision.width,
             height: collision.height
         });
+
     }
+    console.log(quadTree)
     return quadTree;
 }
 function quadTreeObjectsByPosition(player, quadTree) {
@@ -42,6 +45,7 @@ function move(me,direction, quadTree, speed) {
     if (direction === 0) {
         player.x -= detail;
         let objects = quadTreeObjectsByPosition(player, quadTree);
+        console.log(objects)
         let object = checkCollision(player, objects)
         if (object !== false) {
             me.x = object.x - offset.x + object.width;
@@ -53,6 +57,7 @@ function move(me,direction, quadTree, speed) {
 
         player.x += detail;
         let objects = quadTreeObjectsByPosition(player, quadTree);
+        console.log(objects)
         let object = checkCollision(player, objects)
         if (object !== false) {
             me.x = object.x - offset.width - offset.x;
@@ -63,6 +68,7 @@ function move(me,direction, quadTree, speed) {
 
         player.y += detail;
         let objects = quadTreeObjectsByPosition(player, quadTree);
+        console.log(objects)
         let object = checkCollision(player, objects)
         if (object !== false) {
             me.y = object.y - offset.y - offset.height;
@@ -73,6 +79,7 @@ function move(me,direction, quadTree, speed) {
 
         player.y -= detail;
         let objects = quadTreeObjectsByPosition(player, quadTree);
+        console.log(objects)
         let object = checkCollision(player, objects)
         if (object !== false) {
             me.y = object.y + object.height - offset.y;
