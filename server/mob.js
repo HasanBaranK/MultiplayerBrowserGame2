@@ -160,9 +160,11 @@ function calculateAllMobs(io,mobs, players, matrix, gridSize, grid,projectiles,q
     for (let i = 0; i < mobs.length; i++) {
         let mob = mobs[i];
 
-
-            calculateMob(mob, players, gridSize, grid, i,projectiles,quadTree,gameTime,io)
-
+            try {
+                calculateMob(mob, players, gridSize, grid, i, projectiles, quadTree, gameTime, io)
+            }catch (e) {
+                console.log("calculation error")
+            }
     }
 
     //moveMobs(io,mobs, gridSize)
@@ -182,6 +184,8 @@ function calculateMob(mob,players,gridSize,gridBackup,i,projectiles,quadTree,gam
         } catch (e) {
 
         }
+    }else {
+        console.log("no target")
     }
 }
 function moveMob(mob,gridSize) {

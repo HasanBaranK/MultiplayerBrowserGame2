@@ -71,9 +71,9 @@ function init() {
         socket.on("projectile", (res) => {
             //console.log("received from server")
             //console.log(res)
-            console.log("projectilebefore" + gameTime)
+            //console.log("projectilebefore" + gameTime)
             gameTime = res.gameTime;
-            console.log("projectilenew" + gameTime)
+            //console.log("projectilenew" + gameTime)
             projectiles.push(res.projectile)
 
         });
@@ -218,8 +218,8 @@ function drawMobs(mobs){
         ctx.save()
         ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
         for (let i = 0; i < mobs.length; i++) {
-            ctx.drawImage(images["archer"], 0, 0, 128, 128, mobs[i].x, mobs[i].y, 128,128);
-            //ctx.fillRect(mobs[i].x, mobs[i].y, 16, 16);
+            ctx.drawImage(images["archer"], 0, 0, 128, 128, mobs[i].x-48, mobs[i].y-40, 128,128);
+            //ctx.fillRect(mobs[i].x, mobs[i].y, 32, 32);
         }
         ctx.restore()
     }
