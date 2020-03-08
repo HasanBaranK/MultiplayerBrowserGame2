@@ -113,10 +113,10 @@ io.on('connection', function (socket) {
     console.log('Player ' + socket.id + ' has joined the game');
     socket.on('newplayer', function () {
         players[socket.id] = {
-            x: 320,
-            histX: 320,
-            y: 100,
-            histY: 100,
+            x: 1376,
+            histX: 1376,
+            y: 864,
+            histY: 864,
             delay: 0,
             histgametime: 0,
             lastgametime: 0,
