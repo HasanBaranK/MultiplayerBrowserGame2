@@ -1,4 +1,4 @@
-import {sendProjectileServer, drawImageRotation, popUpManager} from "./index.js"
+import {sendProjectileServer, drawImageRotation, popUpManager} from "./game.js"
 import {checkCollision, quadTreeObjectsByPosition} from "./collision.js"
 
 function createProjectile(projectiles, name, startX, startY, currentX, currentY, dirX, dirY, power, quadTree, players, gameTimeFire) {

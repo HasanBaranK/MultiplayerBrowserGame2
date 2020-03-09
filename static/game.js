@@ -7,13 +7,10 @@ let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promis
     currentCoords = {}, animator = {state: "idle"}, uis = {}, gameState = {}, popUpManager = new PopUpManager(),
     vendors = {};
 let camera = new Camera(0, 0, 0);
-let mapEditorCamera = new Camera(0, 0, 0);
 let requestId;
 let quadTree = {};
 let projectiles = [];
 let gameTime = 0;
-let mapcvs, mapctx;
-let actualmapcvs, actualmapctx;
 let actualMousePosition = {};
 let items = [];
 let inStatsScreen = false;
@@ -26,6 +23,7 @@ let matrix = null;
 let mobs;
 
 $(document).ready(init);
+let mousePosition = {};
 
 /////////////////////GAME FUNCTIONS//////////////////////////////
 
@@ -34,13 +32,6 @@ function init() {
     cvs = $("#canvas")[0];
 
     ctx = cvs.getContext("2d");
-    mapcvs = $("#mapeditorcanvas")[0];
-    mapctx = mapcvs.getContext("2d");
-    actualmapcvs = $("#actualmapcanvas")[0];
-    actualmapctx = mapcvs.getContext("2d");
-
-    editorConfig();
-    mapEditorConfig();
     configure();
 
     socket = io.connect({reconnectionDelay: 1000, reconnection: false});
@@ -120,19 +111,6 @@ function configure() {
     cvs.style.position = "absolute";
     cvs.zIndex = 9;
 
-    mapcvs.width = window.innerWidth;
-    mapcvs.height = window.innerHeight;
-    mapcvs.style.border = 'solid black 1px';
-    mapcvs.style.position = "absolute";
-    mapcvs.style.zIndex = 10;
-
-    actualmapcvs.width = window.innerWidth;
-    actualmapcvs.height = window.innerHeight;
-    actualmapcvs.style.border = 'solid black 1px';
-    actualmapcvs.style.position = "absolute";
-    actualmapcvs.style.zIndex = 8;
-
-
     currentCoords.x = cvs.width / 2 - 16;
     currentCoords.y = cvs.height / 2 - 16;
 
@@ -182,7 +160,7 @@ function setUpUI() {
 }
 
 let scale = 1;
-document.getElementById("mapeditorcanvas").addEventListener('wheel',function(event){
+document.getElementById("canvas").addEventListener('wheel',function(event){
     //console.log(event.deltaY)
     if(event.deltaY < 0){
         if(scale <= 0.05){
@@ -221,9 +199,9 @@ function update() {
 
     //drawVendors();
     drawItems();
-   /* if(matrix!==null) {
-        drawMatrix(matrix, 16)
-    }*/
+    /* if(matrix!==null) {
+         drawMatrix(matrix, 16)
+     }*/
     drawPopUps();
     drawUI();
     if(inStatsScreen){
@@ -300,7 +278,7 @@ function drawItems () {
         else {
             ctx.save()
             ctx.scale(scale,scale)
-        ctx.drawImage(images[item.name], item.x, item.y, 8, 8);
+            ctx.drawImage(images[item.name], item.x, item.y, 8, 8);
             ctx.restore();
         }
     }
@@ -537,12 +515,12 @@ function printMousePos(event) {
          " - clientY: " + (event.clientY+camera.y));
     console.log(currentCoords.x,currentCoords.y);
     console.log(currentCoords.x,currentCoords.y);*/
-    if (!mapEditorMode && !editorMode && !isInDeadScreen) {
+    if (!isInDeadScreen) {
         createProjectile(projectiles, "arrow2", me.x, me.y, me.x, me.y, event.clientX + camera.x, event.clientY + camera.y, 10, quadTree, players, gameTime)
     }
 }
 
-document.getElementById("mapeditorcanvas").addEventListener("click", printMousePos);
+document.getElementById("canvas").addEventListener("click", printMousePos);
 
 function drawTiles(Xsize, Ysize, gridSize) {
     let meX = Math.floor(me.x);
@@ -596,12 +574,12 @@ function drawTiles2(Xsize, Ysize, gridSize) {
         for (let y in data.map[x]) {
             let thing = data.map[x][y];
             if(thing !== null ){
-            if(thing.tile !== null ) {
-                ctx.save()
-                ctx.scale(scale,scale)
-                ctx.drawImage(images[thing.tile], thing.x, thing.y, 64, 64);
-                ctx.restore()
-            }
+                if(thing.tile !== null ) {
+                    ctx.save()
+                    ctx.scale(scale,scale)
+                    ctx.drawImage(images[thing.tile], thing.x, thing.y, 64, 64);
+                    ctx.restore()
+                }
             }
         }
     }
@@ -678,17 +656,6 @@ $(window).keydown((key) => {
         gameState.inInventory = !gameState.inInventory;
         socket.emit("inventory",);
     }
-    if (key.key === "m" && mapEditorMode) {
-        drawSelection = true;
-    }
-    if(key.key === "l" && mapEditorMode){
-        socket.emit("newmap", {name:Date.now().toString(),gridSize:gridSize, gridBasedMapArray:gridBasedMapArray, nonGridBasedMapArray:nonGridBasedMapArray})
-    }
-    if(key.key === "z" && mapEditorMode){
-        if(nonGridBasedMapArray.length > 0){
-            nonGridBasedMapArray.splice(nonGridBasedMapArray.length - 1, 1);
-        }
-    }
     if(keyPressed === "q"){
         inStatsScreen = !inStatsScreen;
     }
@@ -715,7 +682,6 @@ function loadImagesThenAnimate(folders) {
     }
     Promise.all(promises).then(() => {
         setUpAnimations();
-        setUpImagesListForMapEditor();
         setUpUI();
         requestId = window.requestAnimationFrame(animate);
     });
@@ -781,154 +747,7 @@ function radians_to_degrees(radians) {
     return radians * (180 / pi);
 }
 
-
-//////////////////////Editor//////////////////////////////////
-
-let editorMode = false;
-let rectangles = [];
-let selectedRectangleIndex = -1;
-let mousePosition = {};
-let imageName;
-let timebefore = Date.now();
-let timenow = Date.now();
-
-
-function editorConfig() {
-    $("#editor").click(() => {
-        if (!editorMode) {
-            $("#editor")[0].innerText = "Game";
-            $("#mapeditor")[0].style.display = "none";
-            $("#add")[0].style.display = "block";
-            $("#imagename")[0].style.display = "block";
-            $("#select")[0].style.display = "block";
-            editorMode = true;
-            ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
-            camera.set(ctx, 0, 0);
-            window.cancelAnimationFrame(requestId);
-            requestId = window.requestAnimationFrame(editor);
-        } else {
-            $("#editor")[0].innerText = "Collision Editor";
-            $("#mapeditor")[0].style.display = "block";
-            $("#add")[0].style.display = "none";
-            $("#imagename")[0].style.display = "none";
-            $("#select")[0].style.display = "none";
-            editorMode = false;
-            ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
-            camera.restore(ctx);
-            window.cancelAnimationFrame(requestId);
-            requestId = window.requestAnimationFrame(animate);
-        }
-    });
-
-    $("#add").click(() => {
-        addRectangle(camera.x + cvs.width / 2 - 50, camera.y + cvs.height / 2 - 50, 100, 100);
-    });
-
-    $("#select").click(() => {
-        imageName = $("#imagename")[0].value;
-    });
-
-    $("#mapeditorcanvas").click((evt) => {
-        mousePosition.x = evt.offsetX || evt.layerX;
-        mousePosition.y = evt.offsetY || evt.layerY;
-        checkRectangleIndex(mousePosition.x + camera.x, mousePosition.y + camera.y);
-    });
-}
-
-
-function editor() {
-    updateEditor();
-    requestId = requestAnimationFrame(editor);
-}
-
-function updateEditor() {
-    timenow = Date.now();
-    if (timenow - timebefore > 30) {
-        timebefore = timenow;
-        if (selectedRectangleIndex != -1) {
-            let r = rectangles[selectedRectangleIndex];
-            if (keys["w"]) {
-                rectangles[selectedRectangleIndex].y--;
-            }
-            if (keys["s"]) {
-                rectangles[selectedRectangleIndex].y++;
-            }
-            if (keys["a"]) {
-                rectangles[selectedRectangleIndex].x--;
-            }
-            if (keys["d"]) {
-                rectangles[selectedRectangleIndex].x++;
-            }
-            if (keys["ArrowUp"] && r.h > 5) {
-                rectangles[selectedRectangleIndex].h--;
-            }
-            if (keys["ArrowDown"]) {
-                rectangles[selectedRectangleIndex].h++;
-            }
-            if (keys["ArrowLeft"] && r.w > 5) {
-                rectangles[selectedRectangleIndex].w--;
-            }
-            if (keys["ArrowRight"]) {
-                rectangles[selectedRectangleIndex].w++;
-            }
-            if (keys["x"]) {
-                rectangles.splice(selectedRectangleIndex, 1);
-                selectedRectangleIndex = -1;
-            }
-            if (keys["p"]) {
-                let message = {name: imageName, rectangles: []};
-                for (let rectangle in rectangles) {
-                    let r = rectangles[rectangle];
-                    let xOffset = r.x - (camera.x + cvs.width / 2);
-                    let yOffset = r.y - (camera.y + cvs.height / 2);
-                    message.rectangles.push({x: xOffset, y: yOffset, width: r.w, height: r.h})
-                }
-                console.log(message);
-                //alert(JSON.stringify(message))
-                socket.emit("updatecollision", message);
-            }
-        }
-    }
-    ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
-    if (imageName) {
-        try {
-            ctx.drawImage(images[imageName], camera.x + cvs.width / 2, camera.y + cvs.height / 2);
-            ctx.beginPath();
-            ctx.rect(camera.x + cvs.width / 2, camera.y + cvs.height / 2, images[imageName].width, images[imageName].height);
-            ctx.stroke();
-        } catch (e) {
-
-        }
-
-    }
-    for (let rectangle in rectangles) {
-        let r = rectangles[rectangle];
-        if (rectangle == selectedRectangleIndex) {
-            ctx.strokeStyle = "yellow";
-            ctx.beginPath();
-            ctx.rect(r.x, r.y, r.w, r.h);
-            ctx.stroke();
-            ctx.strokeStyle = "black"
-        }
-        ctx.beginPath();
-        ctx.rect(r.x, r.y, r.w, r.h);
-        ctx.stroke();
-    }
-}
-
-function addRectangle(x, y, w, h) {
-    rectangles.push(new Rectangle(x, y, w, h));
-}
-
-function checkRectangleIndex(x, y) {
-    for (let rectangle in rectangles) {
-        let r = rectangles[rectangle];
-        if (x > r.x && x < r.x + r.w && y > r.y && y < r.y + r.h) {
-            selectedRectangleIndex = rectangle;
-            return;
-        }
-    }
-}
+/////////////////DEBUG////////////////////
 
 function drawPlayerCollision() {
     for (let key in players) {
@@ -980,6 +799,8 @@ function drawMatrix(matrix,gridSize) {
     }
     ctx.restore()
 }
+/////////////////DEBUG////////////////////
+
 
 var startPathfinding = function() {
 
@@ -997,286 +818,9 @@ function calculateAllMobs(mobs){
     }
 }
 
-
-
-
-class Rectangle {
-    constructor(x, y, w, h) {
-        this.x = x;
-        this.y = y;
-        this.w = w;
-        this.h = h;
-    }
-}
-
 export {
     animate,
     sendProjectileServer,
     drawImageRotation,
     popUpManager
 }
-
-/////////////////////////Map Editor/////////////////////////////
-let mapEditorMode = false;
-let mapMousePosition = {};
-let mapImageName;
-let mapTimebefore = Date.now();
-let mapTimenow = Date.now();
-let imageListObject;
-let imageIndexes = [];
-let imageSelected = undefined;
-let gridSize = 64;
-let gridBasedMapArray = [];
-let nonGridBasedMapArray = [];
-let mapXMin = 0;
-let mapXMax = gridSize * 100;
-let mapYMin = 0;
-let mapYMax = gridSize * 100;
-let delayForMovingCam = Date.now();
-let drawSelection = true;
-let leftMouseClicked = false;
-let rightMouseClicked = false;
-let delayForRightClick = Date.now();
-let sprayOn = true;
-let sprayAmount = 5*gridSize;
-function mapEditor() {
-    updateMapEditor();
-    requestId = requestAnimationFrame(mapEditor);
-}
-
-function updateMapEditor() {
-    let currentTime = Date.now();
-    let allowedToMove = false;
-    if (currentTime - delayForMovingCam > 50) {
-        allowedToMove = true;
-        delayForMovingCam = Date.now();
-    }
-    actualmapctx.clearRect(mapEditorCamera.x, mapEditorCamera.y, actualmapcvs.width + mapEditorCamera.x, actualmapcvs.height + mapEditorCamera.y);
-
-    if (allowedToMove) {
-        if (keys["a"]) {
-            mapEditorCamera.move(actualmapctx, -gridSize, 0);
-            if (mapEditorCamera.x < 0 || mapEditorCamera.y < 0) {
-                mapEditorCamera.move(actualmapctx, gridSize, 0);
-            }
-        }
-        if (keys["d"]) {
-            mapEditorCamera.move(actualmapctx, gridSize, 0);
-            if (mapEditorCamera.x < 0 || mapEditorCamera.y < 0) {
-                mapEditorCamera.move(actualmapctx, -gridSize, 0);
-            }
-        }
-        if (keys["s"]) {
-            mapEditorCamera.move(actualmapctx, 0, gridSize);
-            if (mapEditorCamera.x < 0 || mapEditorCamera.y < 0) {
-                mapEditorCamera.move(actualmapctx, 0, -gridSize);
-            }
-        }
-        if (keys["w"]) {
-            mapEditorCamera.move(actualmapctx, 0, -gridSize);
-            if (mapEditorCamera.x < 0 || mapEditorCamera.y < 0) {
-                mapEditorCamera.move(actualmapctx, 0, gridSize);
-            }
-        }
-    }
-    if (leftMouseClicked) {
-        if (imageSelected) {
-
-
-            let sprayX = 0;
-            let sprayY = 0;
-
-            if(sprayOn){
-                sprayX = Math.floor(Math.random()*sprayAmount)
-                sprayY = Math.floor(Math.random()*sprayAmount)
-            }
-            let placedXGrid = (mousePosition.x * 1/scale + mapEditorCamera.x)+sprayX;
-            let placedYGrid = (mousePosition.y * 1/scale + mapEditorCamera.y)+sprayY;
-
-            if(placedXGrid>mapXMin&&placedXGrid < mapXMax&&placedYGrid>mapYMin && placedYGrid < mapYMax){
-            placedXGrid = Math.floor((placedXGrid / gridSize)) * gridSize;
-            placedYGrid = Math.floor((placedYGrid / gridSize)) * gridSize;
-
-            if (!gridBasedMapArray[placedXGrid / gridSize]) {
-                gridBasedMapArray[placedXGrid / gridSize] = [];
-            }
-            gridBasedMapArray[placedXGrid / gridSize][placedYGrid / gridSize] = {
-                tile: imageSelected,
-                x: placedXGrid,
-                y: placedYGrid
-            };
-            }
-        }
-    }
-    if (currentTime - delayForRightClick > 200) {
-        if (rightMouseClicked) {
-            if (imageSelected) {
-                nonGridBasedMapArray.push({
-                    name: imageSelected,
-                    x: mousePosition.x*1/scale + mapEditorCamera.x,
-                    y: mousePosition.y*1/scale + mapEditorCamera.y
-                });
-            }
-        }
-
-        delayForRightClick = Date.now();
-    }
-
-    drawMapCreated();
-    drawMapCreatedNonGrid();
-    if (drawSelection) {
-        imageListObject.draw(actualmapctx, mapEditorCamera);
-    }
-
-    if (imageSelected) {
-        actualmapctx.drawImage(images[imageSelected], mousePosition.x + mapEditorCamera.x, mousePosition.y + mapEditorCamera.y, gridSize, gridSize);
-    }
-}
-
-function setUpImagesListForMapEditor() {
-    imageListObject = new ImageList(images, 10, 100, 32, 32, 10, 5, 5);
-}
-
-function drawGrid() {
-    for (let x = 0; x < mapcvs.width; x++) {
-        for (let y = 0; y < mapcvs.height; y++) {
-            mapctx.save()
-            mapctx.scale(scale,scale)
-            mapctx.beginPath();
-            mapctx.rect(x * gridSize, y * gridSize, gridSize, gridSize);
-            mapctx.stroke();
-            mapctx.restore()
-        }
-    }
-}
-
-function drawMapCreated() {
-    for (let x in gridBasedMapArray) {
-        for (let y in gridBasedMapArray[x]) {
-            let thing = gridBasedMapArray[x][y];
-            actualmapctx.save()
-            actualmapctx.scale(scale,scale)
-            actualmapctx.drawImage(images[thing.tile], thing.x, thing.y, gridSize, gridSize);
-            actualmapctx.restore()
-        }
-    }
-    actualmapctx.beginPath();
-    actualmapctx.rect(mapXMin, mapYMin, mapXMax, mapYMax);
-    actualmapctx.stroke();
-}
-
-function drawMapCreatedNonGrid() {
-    for (let x in nonGridBasedMapArray) {
-        let thing = nonGridBasedMapArray[x];
-        actualmapctx.save()
-        actualmapctx.scale(scale,scale)
-        actualmapctx.drawImage(images[thing.name], thing.x, thing.y);
-        actualmapctx.restore()
-    }
-    actualmapctx.save()
-    actualmapctx.scale(scale,scale)
-    actualmapctx.beginPath();
-    actualmapctx.rect(mapXMin, mapYMin, mapXMax, mapYMax);
-    actualmapctx.stroke();
-    actualmapctx.restore()
-}
-
-
-function mapEditorConfig() {
-    $("#mapeditor").click(() => {
-        if (!mapEditorMode) {
-            $("#editor")[0].style.display = "none";
-            $("#mapeditor")[0].innerText = "Game";
-            mapEditorMode = true;
-            ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
-            camera.set(ctx, 0, 0);
-            drawGrid();
-            window.cancelAnimationFrame(requestId);
-            requestId = window.requestAnimationFrame(mapEditor);
-        } else {
-            $("#editor")[0].style.display = "block";
-            $("#mapeditor")[0].innerText = "Map Editor";
-            mapEditorMode = false;
-            ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
-            camera.restore(ctx);
-            mapctx.clearRect(0, 0, mapcvs.width, mapcvs.height);
-            window.cancelAnimationFrame(requestId);
-            requestId = window.requestAnimationFrame(animate);
-        }
-    });
-    $("#mapeditorcanvas").contextmenu((evt) => {
-        if (imageSelected) {
-            nonGridBasedMapArray.push({
-                name: imageSelected,
-                x: mousePosition.x + mapEditorCamera.x,
-                y: mousePosition.y + mapEditorCamera.y
-            });
-        }
-    });
-    $("#mapeditorcanvas").mouseup((evt) => {
-        leftMouseClicked = false;
-        rightMouseClicked = false;
-    });
-    $("#mapeditorcanvas").mousedown((evt) => {
-        if (evt.button === 2) {
-            rightMouseClicked = true;
-        } else if (evt.button === 0) {
-            leftMouseClicked = true;
-        }
-    });
-    $("#mapeditorcanvas").click((evt) => {
-        let imgWidth = 32;
-        let imgHeight = 32;
-        let x = 10;
-        let y = 100;
-        let xOff = 5;
-        let yOff = 5;
-        let xIndex = 0;
-        let yIndex = 0;
-        let xLimit = 10;
-        if (drawSelection) {
-            for (let imageName in images) {
-                let xReal = x + (xIndex * (xOff + imgWidth)) + camera.x;
-                let yReal = y + (yIndex * (yOff + imgHeight)) + camera.y;
-                if (mousePosition.x >= xReal && mousePosition.x <= xReal + imgWidth && mousePosition.y >= yReal && mousePosition.y < yReal + imgHeight) {
-                    imageSelected = imageName;
-                    drawSelection = false;
-                    console.log(imageSelected)
-                }
-                xIndex++;
-                if (xIndex === xLimit) {
-                    yIndex++;
-                    xIndex = 0;
-                }
-            }
-        }
-        if (imageSelected) {
-            let placedXGrid = (mousePosition.x *1/scale+ mapEditorCamera.x);
-            let placedYGrid = (mousePosition.y*1/scale+ mapEditorCamera.y);
-            if(placedXGrid>mapXMin&&placedXGrid < mapXMax&&placedYGrid>mapYMin && placedYGrid < mapYMax) {
-                placedXGrid = Math.floor((placedXGrid / gridSize)) * gridSize;
-                placedYGrid = Math.floor((placedYGrid / gridSize)) * gridSize;
-                if (!gridBasedMapArray[placedXGrid / gridSize]) {
-                    gridBasedMapArray[placedXGrid / gridSize] = [];
-                }
-                gridBasedMapArray[placedXGrid / gridSize][placedYGrid / gridSize] = {
-                    tile: imageSelected,
-                    x: placedXGrid,
-                    y: placedYGrid
-                };
-            }
-        }
-    });
-    $("#mapeditorcanvas").mousemove(function (evt) {
-        mousePosition.x = evt.offsetX || evt.layerX;
-        mousePosition.y = evt.offsetY || evt.layerY;
-    });
-}
-
-
-
-//
-//
-//
-//
-///1000 LINES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

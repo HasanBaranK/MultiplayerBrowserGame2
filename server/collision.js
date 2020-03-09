@@ -7,7 +7,7 @@ function initializeQuadTree(quadTree,collisionMap) {
         y: 0,
         width: 8000,
         height: 8000
-    }, 15, 6);
+    }, 5, 6);
     for (let i = 0; i < collisionMap.length; i++) {
         let collision = collisionMap[i];
         quadTree.insert({
