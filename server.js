@@ -57,7 +57,7 @@ quadtree = collisionFunctions.initializeQuadTree(quadtree,collisionMap);
 let matrix = mapFunctions.createGridForPathFinder(quadtree,mapSizeX,mapSizeY,pathFindingGridSize);
 let mobs = [];
 let gridPathFinder = mobFunctions.initializePathFinder(matrix);
-for (let i = 0; i < 0; i++) {
+for (let i = 0; i < 4; i++) {
     let rand = Math.floor(Math.random() * 70)+1
     //console.log(rand)
     let rand2 = Math.floor(Math.random() * 40)+4
@@ -301,7 +301,7 @@ setInterval(function () {
 }, 1000/60);
 setInterval(function () {
     //console.time('calculation');
-    if(mobs.length <0){
+    if(mobs.length <4){
         for (let i = 0; i < 1; i++) {
             let rand = Math.floor(Math.random() * 70) +1
             //console.log(rand)
@@ -340,4 +340,4 @@ setInterval(function () {
         playerChanged = false;
     }
     //io.emit("players",players);
-}, 100);
+}, 50);
