@@ -49,7 +49,7 @@ var players = {};
 var inventories = {};
 var vendors = {};
 var items = [];
-
+let playerChanged = false;
 let images = {};
 images = getImages(images)
 quadtree = collisionFunctions.initializeQuadTree(quadtree,collisionMap);
@@ -204,8 +204,9 @@ io.on('connection', function (socket) {
             players: players,
             mobs: mobs,
         };
+        playerChanged = true;
         //console.log(mobs.length);
-        io.emit("players",obj);
+        //io.emit("players",obj);
 
     });
     socket.on('updatePlayer', function (data) {
@@ -322,4 +323,21 @@ setInterval(function () {
 
     mobFunctions.moveMobs(io, mobs, pathFindingGridSize);
     //mobFunctions.moveMobs(mobs,gridPathFinder)
+
 }, 300);
+setInterval(function () {
+
+    //mobFunctions.moveMobs(mobs,gridPathFinder)
+
+    //console.log(mobs.length);
+    if(playerChanged) {
+        let obj = {
+            gameTime: gameTime,
+            players: players,
+            mobs: mobs,
+        };
+        io.emit("players", obj);
+        playerChanged = false;
+    }
+    //io.emit("players",players);
+}, 100);

@@ -117,12 +117,12 @@ document.getElementById("mapeditorcanvas").addEventListener("click", printMouseP
 $(window).keydown((key) => {
     keys[key.key] = true;
     let keyPressed = key.key;
-    if (key.key === "i") {
-        gameState.inInventory = !gameState.inInventory;
-        socket.emit("inventory",);
-    }
     if (key.key === "m" && mapEditorMode) {
-        drawSelection = true;
+        if(drawSelection === true){
+            drawSelection = false;
+        }else {
+            drawSelection = true;
+        }
     }
     if(key.key === "l" && mapEditorMode){
         socket.emit("newmap", {name:Date.now().toString(),gridSize:gridSize, gridBasedMapArray:gridBasedMapArray, nonGridBasedMapArray:nonGridBasedMapArray})
@@ -131,9 +131,6 @@ $(window).keydown((key) => {
         if(nonGridBasedMapArray.length > 0){
             nonGridBasedMapArray.splice(nonGridBasedMapArray.length - 1, 1);
         }
-    }
-    if(keyPressed === "q"){
-        inStatsScreen = !inStatsScreen;
     }
 });
 
@@ -164,14 +161,9 @@ function loadImagesThenAnimate(folders) {
 
 /////////////////////////Map Editor/////////////////////////////
 let mapEditorMode = false;
-let mapMousePosition = {};
-let mapImageName;
-let mapTimebefore = Date.now();
-let mapTimenow = Date.now();
 let imageListObject;
-let imageIndexes = [];
 let imageSelected = undefined;
-let gridSize = 64;
+let gridSize = 32;
 let gridBasedMapArray = [];
 let nonGridBasedMapArray = [];
 let mapXMin = 0;
@@ -300,10 +292,18 @@ function drawMapCreated() {
     for (let x in gridBasedMapArray) {
         for (let y in gridBasedMapArray[x]) {
             let thing = gridBasedMapArray[x][y];
+
             actualmapctx.save()
             actualmapctx.scale(scale,scale)
             actualmapctx.drawImage(images[thing.tile], thing.x, thing.y, gridSize, gridSize);
             actualmapctx.restore()
+             /*
+            ctx.save();
+            ctx.translate(thing.x,thing.y);
+            ctx.rotate(0*Math.PI/180);
+            actualmapctx.scale(scale,scale/2)
+            ctx.drawImage(images[thing.tile],gridSize,gridSize);
+            ctx.restore();*/
         }
     }
     actualmapctx.beginPath();

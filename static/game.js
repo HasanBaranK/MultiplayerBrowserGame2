@@ -37,6 +37,7 @@ function init() {
     socket = io.connect({reconnectionDelay: 1000, reconnection: false});
     socket.on("connect", () => {
         socket.emit("getimages", {});
+
         socket.on("data", (res) => {
             data = res;
             gameTime = res.gameTime;
@@ -298,24 +299,24 @@ function doTheMovement() {
     let step = 8;
     if (keys["a"]) {
         locationChanged = true;
-        if (move(me, 0, quadTree, 2)) {
+        if (move(me, 0, quadTree, 4)) {
         }
 
     }
     if (keys["d"]) {
         locationChanged = true;
-        if (move(me, 1, quadTree, 2)) {
+        if (move(me, 1, quadTree, 4)) {
         }
 
     }
     if (keys["s"]) {
         locationChanged = true;
-        if (move(me, 2, quadTree, 2)) {
+        if (move(me, 2, quadTree, 4)) {
         }
     }
     if (keys["w"]) {
         locationChanged = true;
-        if (move(me, 3, quadTree, 2)) {
+        if (move(me, 3, quadTree, 4)) {
         }
     }
     if (keys["p"]) {
@@ -504,6 +505,12 @@ function cameraFollow() {
         let xDifference = (currentCoords.x  - me.x);
         let yDifference = (currentCoords.y - me.y);
         camera.move(ctx, -xDifference, -yDifference);
+        if (camera.y < 0) {
+            camera.move(ctx, -xDifference, 0);
+        }
+        if (camera.x < 0 ) {
+            camera.move(ctx, 0,  -yDifference);
+        }
         currentCoords.x = me.x ;
         currentCoords.y = me.y ;
     }

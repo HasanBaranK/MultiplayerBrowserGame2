@@ -262,7 +262,9 @@ function moveMobs(io,mobs, gridSize) {
         }
 
     }
-    io.emit("mobs", mobs);
+    if(mobs.length > 0 ) {
+        io.emit("mobs", mobs);
+    }
 }
 var MathHelper = {
     // Get a value between two values
