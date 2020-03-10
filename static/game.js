@@ -505,12 +505,7 @@ function cameraFollow() {
         let xDifference = (currentCoords.x  - me.x);
         let yDifference = (currentCoords.y - me.y);
         camera.move(ctx, -xDifference, -yDifference);
-        if (camera.y < 0) {
-            camera.move(ctx, -xDifference, 0);
-        }
-        if (camera.x < 0 ) {
-            camera.move(ctx, 0,  -yDifference);
-        }
+
         currentCoords.x = me.x ;
         currentCoords.y = me.y ;
     }
