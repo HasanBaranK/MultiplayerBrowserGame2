@@ -10,7 +10,6 @@ let requestId;
 let mapcvs, mapctx;
 let actualmapcvs, actualmapctx;
 let actualMousePosition = {};
-let inStatsScreen = false;
 let isInDeadScreen = false;
 
 $(document).ready(init);
@@ -294,7 +293,8 @@ function drawMapCreated() {
             let thing = gridBasedMapArray[x][y];
 
             actualmapctx.save()
-            actualmapctx.scale(scale,scale)
+            actualmapctx.scale(scale, scale);
+            //actualmapctx.rotate(0 * Math.PI /180);
             actualmapctx.drawImage(images[thing.tile], thing.x, thing.y, gridSize, gridSize);
             actualmapctx.restore()
              /*
@@ -398,6 +398,7 @@ function mapEditorConfig() {
         if (imageSelected) {
             let placedXGrid = (mousePosition.x *1/scale+ mapEditorCamera.x);
             let placedYGrid = (mousePosition.y*1/scale+ mapEditorCamera.y);
+
             if(placedXGrid>mapXMin&&placedXGrid < mapXMax&&placedYGrid>mapYMin && placedYGrid < mapYMax) {
                 placedXGrid = Math.floor((placedXGrid / gridSize)) * gridSize;
                 placedYGrid = Math.floor((placedYGrid / gridSize)) * gridSize;

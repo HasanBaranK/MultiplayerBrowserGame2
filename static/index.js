@@ -208,9 +208,10 @@ function update() {
     drawPlayer();
     drawPlayers();
     drawMobs(mobs)
+    calculateAllProjectiles(projectiles, gameTime, quadTree, players,mobs)
     drawMapFront2(14, 16, 64);
 
-    calculateAllProjectiles(projectiles, gameTime, quadTree, players)
+
 
     for (let ui in uis) {
         uis[ui].draw(ctx, camera);

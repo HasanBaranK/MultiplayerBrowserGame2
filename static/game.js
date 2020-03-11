@@ -187,9 +187,10 @@ function update() {
     drawPlayer();
     drawPlayers();
     drawMobs(mobs)
+    calculateAllProjectiles(projectiles, gameTime, quadTree, players,mobs)
     drawMapFront2(14, 16, 64);
 
-    calculateAllProjectiles(projectiles, gameTime, quadTree, players)
+
 
     for (let ui in uis) {
         uis[ui].draw(ctx, camera);
@@ -518,7 +519,7 @@ function printMousePos(event) {
     console.log(currentCoords.x,currentCoords.y);
     console.log(currentCoords.x,currentCoords.y);*/
     if (!isInDeadScreen) {
-        createProjectile(projectiles, "arrow2", me.x, me.y, me.x, me.y, event.clientX + camera.x, event.clientY + camera.y, 10, quadTree, players, gameTime)
+        createProjectile(projectiles, "arrow3", me.x , me.y, me.x, me.y, event.clientX + camera.x, event.clientY + camera.y, 15, quadTree, players, gameTime,24,8)
     }
 }
 
@@ -700,7 +701,7 @@ function sendProjectileServer(projectile) {
     socket.emit("projectile", projectile)
 }
 
-function drawImageRotation(image, x, y, scale, rotation, sin, cos) {
+function drawImageRotation(image, x, y, scale, rotation, sin, cos,width,height) {
     ctx.save()
     ctx.translate(x, y)
     //ctx.rotate(-projectiles[projectile].angle)
@@ -713,18 +714,26 @@ function drawImageRotation(image, x, y, scale, rotation, sin, cos) {
     /*console.log("arccos: "+radians_to_degrees(Math.acos(cos)));
     console.log("arcsin: "+radians_to_degrees(Math.asin(sin)));
     console.log("arctan: "+radians_to_degrees(Math.atan(sin/cos)));*/
-    ctx.drawImage(images[image], 0, 0);
+    ctx.drawImage(images[image], 0, 0,width,height);
+    //ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    //ctx.fillRect(0, 0, width, height);
+
+
+    //show result of end point
+
     //console.log(ctx.getTransform());
     //ctx.fillRect(16, 9, 7, 5);
     ctx.restore()
     ctx.save()
-    let pos;
-    if (Math.asin(sin) < 0) {
-        pos = rotate(x,y,x+16,y+9,-Math.acos(cos))
-    } else {
-        pos = rotate(x,y,x+16,y+9,Math.acos(cos))
-    }
-    ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+    //ctx.fillStyle = "rgba(255, 0, 0, 0.7)";
+    //ctx.fillRect(colliderX, colliderY, 7, 5);
+    // let pos;
+    // if (Math.asin(sin) < 0) {
+    //     pos = rotate(x,y,x+16,y+9,-Math.acos(cos))
+    // } else {
+    //     pos = rotate(x,y,x+16,y+9,Math.acos(cos))
+    // }
+    // ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
     /*if (Math.asin(sin) < 0) {
         ctx.rotate(-Math.acos(cos));
     } else {
@@ -732,9 +741,21 @@ function drawImageRotation(image, x, y, scale, rotation, sin, cos) {
     }*/
     //ctx.rotate(Math.atan(rotation));
     //console.log(x +","+y+","+pos)
-    ctx.fillRect(pos[0], pos[1], 7, 5);
+    // ctx.fillRect(pos[0], pos[1], 7, 5);
 
     ctx.restore()
+}
+function lineToAngle(ctx, x1, y1, length, angle) {
+
+    angle *= Math.PI / 180;
+
+    var x2 = x1 + length * Math.cos(angle),
+        y2 = y1 + length * Math.sin(angle);
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+
+    return {x: x2, y: y2};
 }
 function rotate(cx, cy, x, y, angle) {
     let radians = angle,

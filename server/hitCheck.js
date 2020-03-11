@@ -11,28 +11,9 @@ function calculateAllProjectiles(io,projectiles, currentGameTime, players,quadTr
         let projectile = projectiles[i];
         let time = currentGameTime - projectile.gameTimeFire;
 
-
-       // console.log("time: " + time)
-        /*console.log("x: " + projectile.startX)
-        console.log("y: " + projectile.startY)
-        console.log("degree: " + projectile.sin)
-        console.log("degree: " + projectile.cos)
-        console.log(time * projectile.sin * 5)
-        console.log(time * projectile.cos * 5)
-        console.log(projectile.startY + time * projectile.sin)
-        console.log(projectile.startX + time * projectile.cos)*/
-        //V0.t - 1/2 .g.t^2
-        //v02/2.g
-
-        //Normal
-        //let additionX = time * projectile.cos * 5;
-        //let additionY = time * projectile.sin * 5;
-
-        //drawImageRotation(projectile.name, projectile.startX + additionX, projectile.startY + additionY, 1, projectile.sin / projectile.cos);
-
         //Advanced slowing down arrow
-        let t = 40;
-        let v0 = 18;
+        let t = 60;
+        let v0 = projectile.power;
         let g = v0 / t;
 
         if (v0 / g <= time) {
@@ -41,13 +22,13 @@ function calculateAllProjectiles(io,projectiles, currentGameTime, players,quadTr
             continue;
         } else {
             let x = projectile.startX + (v0 * time - 1 / 2 * g * time * time) * projectile.cos;
-            let y = projectile.startY + (v0 * time - 1 / 2 * g * time * time) * projectile.sin;
+            let y = projectile.startY+ (v0 * time - 1 / 2 * g * time * time) * projectile.sin;
 
             let obj = {
-                x: x + 16,
-                y: y + 9,
-                width: 7,
-                height: 5,
+                x: x ,
+                y: y ,
+                width: projectile.width,
+                height: projectile.height,
             }
             let objects = collisionFunctions.quadTreeObjectsByPosition(obj, quadTree);
             let object = collisionFunctions.checkCollision(obj, objects)
@@ -57,7 +38,6 @@ function calculateAllProjectiles(io,projectiles, currentGameTime, players,quadTr
                 continue;
             }
             object = checkIfHitPlayer(obj, players,projectile.origin)
-            //console.log(object)
             if (object !== false) {
                 projectiles.splice(i, 1);
                 //console.log("hit player");
@@ -92,13 +72,7 @@ function calculateAllProjectiles(io,projectiles, currentGameTime, players,quadTr
                 }
             }
 
-        }/*
-            /*console.log(projectile.cos * projectile.power/ Math.pow(1.1,time))
-            console.log(projectile.sin * projectile.power/ Math.pow(1.1,time))*/
-        //let currentX = Math.floor(projectile.startX + projectile.cos * projectile.power/ Math.pow(1.3,time))
-        //let currentY =Math.floor(projectile.startY +projectile.sin * projectile.power / Math.pow(1.3,time))
-        //console.log(currentX+","+currentY)
-        //drawImageRotation(projectile.name, Math.floor(currentX), Math.floor(currentY), 1, projectile.sin/projectile.cos);
+        }
     }
 }
 function cloneMe(me) {
