@@ -1,12 +1,13 @@
 /////////////////////INITIALIZATION CODE//////////////////////////
-import {Camera, Player, Inventory, PopUpManager, Bar, ImageList} from "./classes.js";
-import {initializeQuadTree, move, cloneMe} from "./collision.js";
-import {calculateAllProjectiles, createProjectile} from "./projectiles.js";
+import {Camera, Player, Inventory, PopUpManager, Bar, ImageList} from "../classes.js";
+import {initializeQuadTree, move, cloneMe} from "../collision.js";
+import {calculateAllProjectiles, createProjectile} from "../projectiles.js";
 
 let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promises = [], players = {}, me = undefined,
     currentCoords = {}, animator = {state: "idle"}, uis = {}, gameState = {}, popUpManager = new PopUpManager(),
     vendors = {};
 let camera = new Camera(0, 0, 0);
+let lightingCamera = new Camera(0, 0, 0);
 let requestId;
 let quadTree = {};
 let projectiles = [];
@@ -18,22 +19,46 @@ let coins = 0;
 let isInDeadScreen = false;
 let fadingDeathScreen = 0;
 let fadingDeathScreenInc = 0.01;
-let lastMoveTime = (new Date()).getTime()
+
 let matrix = null;
 let mobs;
 
-$(document).ready(init)
-;
+$(document).ready(init);
 let mousePosition = {};
 
+let lightingcvs ,lightingctx;
 
 /////////////////////GAME FUNCTIONS//////////////////////////////
+var Lamp = illuminated.Lamp
+    , RectangleObject = illuminated.RectangleObject
+    , DiscObject = illuminated.DiscObject
+    , PolygonObject = illuminated.PolygonObject
+    , Vec2 = illuminated.Vec2
+    , Lighting = illuminated.Lighting
+    , DarkMask = illuminated.DarkMask
+;
 
+var lightX, lightY;
+var pe;
+var PARTICLE_SIZE = 1.1;
+var PARTICLE_LIFESPAN = 14;
+var camerascale = 40;
+
+var startTime = +new Date();
+var lighting;
+var darkmask;
+var randBaseTime;
+var light;
+var objects;
+var lastUpdate = 0;
+var UPDATE_FREQ = 25;
 function init() {
 
     document.addEventListener('contextmenu', event => event.preventDefault());
     cvs = $("#canvas")[0];
     ctx = cvs.getContext("2d");
+    lightingcvs = $("#lightingcanvas")[0];
+    lightingctx = lightingcvs.getContext("2d");
     configure();
 
     socket = io.connect({reconnectionDelay: 1000, reconnection: false});
@@ -50,6 +75,8 @@ function init() {
             gameTime = res.gameTime;
             quadTree = initializeQuadTree(quadTree, data.collisionMap);
             //quadTree = data.quadtree;
+            initLighting()
+
             socket.emit("newplayer", {});
         });
         socket.on("images", (res) => {
@@ -96,7 +123,6 @@ function init() {
                 let updated = players[socket.id];
                 updated.x = me.x;
                 updated.y = me.y;
-                updated.lastMoveTime = me.lastMoveTime;
                 me = updated;
 
 
@@ -108,12 +134,116 @@ function init() {
     });
 }
 
+function initLighting() {
+    light = new Lamp({
+        color: 'rgba(255, 220, 150, 0.2)',
+        distance: 300
+    });
+
+    objects = [/*
+        new RectangleObject({ topleft: new Vec2(60, 250), bottomright: new Vec2(140, 330) }),
+        new RectangleObject({ topleft: new Vec2(50, 50), bottomright: new Vec2(100, 100) }),
+        new DiscObject({ center: new Vec2(550, 300), radius: 50 }),
+        new DiscObject({ center: new Vec2(550, 130), radius: 20 }),*/
+    ];
+
+    /*data.collisionMap.forEach(element => {
+        objects.push(new RectangleObject({ topleft: new Vec2(element.x , element.y), bottomright: new Vec2(element.x+element.width, element.y+element.height)}))
+    })*/
+    lighting = new Lighting({
+        light: light,
+        objects: objects
+    });
+
+    darkmask = new DarkMask({ lights: [light], color: 'rgba(0,0,0,0.2)' });
+
+    randBaseTime = Math.round(2000 + 600*Math.random());
+}
+
+var metal = new Image();
+metal.src = "libs/galvanized-plate.jpg";
+function render () {
+    lightingctx.save();
+
+    lightingctx.globalCompositeOperation = "lighter";
+    lightingctx.translate(camera.x,camera.y);
+
+    lighting.render(lightingctx);
+    pe.render(lightingctx);
+
+    lightingctx.globalCompositeOperation = "source-over";
+    darkmask.render(lightingctx);
+    lightingctx.restore();
+}
+
+function updatePosition (lightX,lightY) {
+    // lightX = 700;
+    // lightY = 700;
+    //var t = (+new Date()-startTime);
+    //var s = randBaseTime+500*Math.cos(t/3000);
+    //var ts = t/s;
+    //lightX = 140//+150*(1+Math.cos(ts));
+    //lightY = 160//*(1+Math.sin(ts));
+    light.position.x = lightX //+ 0.65*camerascale;
+    light.position.y = lightY //+ 0.55*camerascale;
+    pe.position.x = lightX;
+    pe.position.y = lightY;
+    pe.update(1);
+}
+
+var samples;
+function computeSamplesPosition () {
+    samples = [];
+    (pe.particles||[]).forEach(function (p) {
+        if(p.timeToLive>4)
+            samples.push(new Vec2(p.position.x + camera.x, p.position.y+ camera.y));
+    });
+        light.samples = samples.length;
+
+}
+
+function initParticles () {
+    pe && pe.stop();
+    pe = new cParticleSystem();
+    pe.maxParticles = 60;
+    pe.lifeSpan = PARTICLE_LIFESPAN;
+    pe.lifeSpanRandom = 1;
+    pe.position.x = -1000;
+    pe.position.y = -1000;
+    pe.startColour = [ 240, 208, 68, 1 ];
+    pe.startColourRandom = [ 40, 40, 60, 0 ];
+    pe.finishColour = [ 245, 35, 0, 0 ];
+    pe.finishColourRandom = [ 20, 20, 20, 0 ];
+    pe.gravity = { x: 0, y: -0.02*camerascale };
+    pe.size = PARTICLE_SIZE * camerascale;
+    pe.sizeRandom = 0.4*camerascale;
+    pe.speed = 0.01*camerascale;
+    pe.speedRandom = 0.005*camerascale;
+    pe.sharpness = .3*camerascale;
+    pe.sharpnessRandom = .1*camerascale;
+    pe.positionRandom = { x: 0.1*camerascale, y: 0.1*camerascale };
+    pe.init();
+
+    // OVERRIDE the light forEachSample to use the particles
+    computeSamplesPosition();
+    light.forEachSample = function (f) {
+        samples.forEach(f);
+    }
+}
 function configure() {
+
     cvs.width = window.innerWidth;
     cvs.height = window.innerHeight;
     cvs.style.border = 'solid black 1px';
     cvs.style.position = "absolute";
-    cvs.zIndex = 9;
+    cvs.style.zIndex = 9;
+
+
+    lightingcvs.width = window.innerWidth;
+    lightingcvs.height = window.innerHeight;
+    lightingcvs.style.border = 'solid black 1px';
+    lightingcvs.style.position = "absolute";
+    lightingcvs.style.zIndex = 10;
 
     currentCoords.x = cvs.width / 2 - 16;
     currentCoords.y = cvs.height / 2 - 16;
@@ -139,6 +269,13 @@ function openVendorInventory(pos){
 
 function animate() {
     update();
+
+    var now = +new Date();
+    if (now >= lastUpdate + UPDATE_FREQ) {
+            lastUpdate = now;
+            update();
+    }
+    render();
     requestId = requestAnimationFrame(animate);
 }
 
@@ -164,21 +301,21 @@ function setUpUI() {
 }
 
 let scale = 1;
-// document.getElementById("canvas").addEventListener('wheel',function(event){
-//     //console.log(event.deltaY)
-//     if(event.deltaY < 0){
-//         if(scale <= 0.05){
-//
-//         }else {
-//             scale -= 0.05;
-//         }
-//     }else {
-//         scale += 0.05;
-//     }
-//     console.log(scale)
-//     cameraFollow()
-//     return false;
-// }, false);
+document.getElementById("canvas").addEventListener('wheel',function(event){
+    //console.log(event.deltaY)
+    if(event.deltaY < 0){
+        if(scale <= 0.05){
+
+        }else {
+            scale -= 0.05;
+        }
+    }else {
+        scale += 0.05;
+    }
+    console.log(scale)
+    cameraFollow()
+    return false;
+}, false);
 
 
 
@@ -186,6 +323,8 @@ function update() {
 
     cameraFollow();
     ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
+    lightingctx.clearRect(lightingCamera.x, lightingCamera.y, lightingcvs.width, lightingcvs.height);
+
     drawTiles2(14, 16, 64);
     //drawMapBack(14, 16, 64);
     drawPlayer();
@@ -205,6 +344,7 @@ function update() {
 
     //drawVendors();
     drawItems();
+    drawLighting();
     /* if(matrix!==null) {
          drawMatrix(matrix, 16)
      }*/
@@ -230,6 +370,28 @@ function drawMobs(mobs){
         ctx.restore()
     }
 }
+function drawLighting() {
+    computeSamplesPosition();
+    updatePosition(100,700);
+
+    lighting.compute(lightingcvs.width, lightingcvs.height);
+    darkmask.compute(lightingcvs.width, lightingcvs.height);
+    render()
+}
+
+
+function createLight(distance) {
+    let newLight = new Lamp({
+        color: 'rgba(255, 220, 150, 0.2)',
+        distance: distance
+    });
+    let newLighting = new Lighting({
+        light: newLight,
+        objects: objects
+    });
+
+    return newLighting;
+}
 function drawDeadScreen(){
     ctx.fillStyle = "rgba(0, 0, 0," + fadingDeathScreen + ")";
     ctx.fillRect(camera.x,camera.y, cvs.width, cvs.height);
@@ -241,15 +403,12 @@ function drawDeadScreen(){
     ctx.fillStyle = "rgba(255, 255, 255, 1)";
     ctx.fillText("YOU ARE DEAD",camera.x + cvs.width/2 - 30, camera.y + cvs.height/2)
 }
-
 function drawCoinsAmount(size = 32){
     ctx.drawImage(images["coin"], (size+images["healthbar"].width + camera.x), (cvs.height + camera.y - size - 5), size, size);
     ctx.fillStyle = "gold";
     ctx.font = "34px Arial";
     ctx.fillText(coins, (size+images["healthbar"].width + camera.x) + 50, (cvs.height + camera.y - size - 5) + 27)
 }
-
-
 function drawStats(){
     //draw big rectangle
     //draw stats on it but you have to position properly
@@ -261,15 +420,12 @@ function drawStats(){
     ctx.fillStyle = "black";
 
 }
-
 function drawVendors () {
     for (let vendorIndex in vendors) {
         let vendor = vendors[vendorIndex];
         ctx.drawImage(images[vendor.name], vendor.x, vendor.y, 64, 64);
     }
 }
-
-
 function drawItems () {
     for (let itemIndex in items) {
         let item = items[itemIndex];
@@ -300,27 +456,28 @@ setInterval(function () {
 function doTheMovement() {
     let locationChanged = false;
 
-    let speed = 5;
+    let step = 8;
+    let speed = 8;
     if (keys["a"]) {
         locationChanged = true;
-        if (move(me, 0, quadTree, speed,lastMoveTime)) {
+        if (move(me, 0, quadTree, speed)) {
         }
 
     }
     if (keys["d"]) {
         locationChanged = true;
-        if (move(me, 1, quadTree, speed,lastMoveTime)) {
+        if (move(me, 1, quadTree, speed)) {
         }
 
     }
     if (keys["s"]) {
         locationChanged = true;
-        if (move(me, 2, quadTree, speed,lastMoveTime)) {
+        if (move(me, 2, quadTree, speed)) {
         }
     }
     if (keys["w"]) {
         locationChanged = true;
-        if (move(me, 3, quadTree, speed,lastMoveTime)) {
+        if (move(me, 3, quadTree, speed)) {
         }
     }
     if (keys["p"]) {
@@ -332,7 +489,7 @@ function doTheMovement() {
         console.log(meX + "," + meY)
     }
     if (locationChanged) {
-        lastMoveTime = (new Date()).getTime()
+
         socket.emit("movement", {
             "w": keys["w"],
             "a": keys["a"],
@@ -340,7 +497,6 @@ function doTheMovement() {
             "d": keys["d"],
             "x": me.x,
             "y": me.y,
-            "LastMoveTime": me.lastMoveTime,
             "gametime": gameTime
         });
     }
@@ -496,7 +652,6 @@ function drawPopUps() {
     popUpManager.drawPopUps(ctx);
 }
 
-
 function animationChecker(stateName) {
     if (animator.state !== stateName) {
         animator.player.animations[animator.state].reset();
@@ -510,6 +665,20 @@ function cameraFollow() {
         let xDifference = (currentCoords.x  - me.x);
         let yDifference = (currentCoords.y - me.y);
         camera.move(ctx, -xDifference, -yDifference);
+        lightingCamera.move(lightingctx, -xDifference, -yDifference);
+        objects.forEach(element => {
+
+
+            element.points.forEach(point => {
+
+                point.x += camera.x
+                point.y += camera.y
+            })
+            element.topleft.x += camera.x
+            element.topleft.y += camera.y
+            element.bottomright.x += camera.x
+            element.bottomright.y += camera.y
+        })
 
         currentCoords.x = me.x ;
         currentCoords.y = me.y ;
@@ -690,6 +859,8 @@ function loadImagesThenAnimate(folders) {
     Promise.all(promises).then(() => {
         setUpAnimations();
         setUpUI();
+        initParticles();
+        initLighting();
         requestId = window.requestAnimationFrame(animate);
     });
 }

@@ -18,12 +18,11 @@ let coins = 0;
 let isInDeadScreen = false;
 let fadingDeathScreen = 0;
 let fadingDeathScreenInc = 0.01;
-let lastMoveTime = (new Date()).getTime()
+
 let matrix = null;
 let mobs;
 
-$(document).ready(init)
-;
+$(document).ready(init);
 let mousePosition = {};
 
 
@@ -96,7 +95,6 @@ function init() {
                 let updated = players[socket.id];
                 updated.x = me.x;
                 updated.y = me.y;
-                updated.lastMoveTime = me.lastMoveTime;
                 me = updated;
 
 
@@ -164,21 +162,21 @@ function setUpUI() {
 }
 
 let scale = 1;
-// document.getElementById("canvas").addEventListener('wheel',function(event){
-//     //console.log(event.deltaY)
-//     if(event.deltaY < 0){
-//         if(scale <= 0.05){
-//
-//         }else {
-//             scale -= 0.05;
-//         }
-//     }else {
-//         scale += 0.05;
-//     }
-//     console.log(scale)
-//     cameraFollow()
-//     return false;
-// }, false);
+document.getElementById("canvas").addEventListener('wheel',function(event){
+    //console.log(event.deltaY)
+    if(event.deltaY < 0){
+        if(scale <= 0.05){
+
+        }else {
+            scale -= 0.05;
+        }
+    }else {
+        scale += 0.05;
+    }
+    console.log(scale)
+    cameraFollow()
+    return false;
+}, false);
 
 
 
@@ -300,27 +298,27 @@ setInterval(function () {
 function doTheMovement() {
     let locationChanged = false;
 
-    let speed = 5;
+    let step = 8;
     if (keys["a"]) {
         locationChanged = true;
-        if (move(me, 0, quadTree, speed,lastMoveTime)) {
+        if (move(me, 0, quadTree, 4)) {
         }
 
     }
     if (keys["d"]) {
         locationChanged = true;
-        if (move(me, 1, quadTree, speed,lastMoveTime)) {
+        if (move(me, 1, quadTree, 4)) {
         }
 
     }
     if (keys["s"]) {
         locationChanged = true;
-        if (move(me, 2, quadTree, speed,lastMoveTime)) {
+        if (move(me, 2, quadTree, 4)) {
         }
     }
     if (keys["w"]) {
         locationChanged = true;
-        if (move(me, 3, quadTree, speed,lastMoveTime)) {
+        if (move(me, 3, quadTree, 4)) {
         }
     }
     if (keys["p"]) {
@@ -332,7 +330,7 @@ function doTheMovement() {
         console.log(meX + "," + meY)
     }
     if (locationChanged) {
-        lastMoveTime = (new Date()).getTime()
+
         socket.emit("movement", {
             "w": keys["w"],
             "a": keys["a"],
@@ -340,7 +338,6 @@ function doTheMovement() {
             "d": keys["d"],
             "x": me.x,
             "y": me.y,
-            "LastMoveTime": me.lastMoveTime,
             "gametime": gameTime
         });
     }

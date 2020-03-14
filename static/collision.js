@@ -28,7 +28,7 @@ function quadTreeObjectsByPosition(player, quadTree) {
     });
 }
 ////////////////////COLLISION///////////////////////////////
-function move(me,direction, quadTree, speed) {
+function move(me,direction, quadTree, speed,lastMove) {
     let player = cloneMe(me);
     let offset = {
         x: 10,
@@ -40,7 +40,18 @@ function move(me,direction, quadTree, speed) {
     player.y += offset.y
     player.width = offset.width
     player.height = offset.height
-    let detail = speed;
+
+    let currentTime = (new Date()).getTime();
+
+    let detail;
+    if(lastMove !== undefined&&(currentTime - lastMove) <100){
+        detail = speed * (currentTime - lastMove)/20;
+
+    }else {
+        detail =0;
+        console.log(detail)
+    }
+    ///lastMove = currentTime;
     if (direction === 0) {
         player.x -= detail;
         let objects = quadTreeObjectsByPosition(player, quadTree);

@@ -65,14 +65,7 @@ for (let i = 0; i < 4; i++) {
     mobs.push(mobFunctions.createMob(rand*pathFindingGridSize,rand2*pathFindingGridSize,1,1,null,matrix));
 }
 
-/*
-mobs.push(mobFunctions.createMob(32,0,1,1,null,matrix));
-mobs.push(mobFunctions.createMob(64,0,1,1,null,matrix));
-mobs.push(mobFunctions.createMob(96,0,1,1,null,matrix));
-mobs.push(mobFunctions.createMob(128,0,1,1,null,matrix));
-mobs.push(mobFunctions.createMob(144,0,1,1,null,matrix));
-mobs.push(mobFunctions.createMob(160,0,1,1,null,matrix));
-*/
+
 
 function getImages(images) {
     fs.readdir(imageFolder, (err, files) => {
@@ -194,7 +187,7 @@ io.on('connection', function (socket) {
                 player.x = data.x
                 player.y = data.y
                 player.coins = data.coins
-
+                player.lastMoveTime = data.LastMoveTime;
             } else {
                 player.status = 0;
             }
