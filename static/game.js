@@ -1,11 +1,11 @@
 /////////////////////INITIALIZATION CODE//////////////////////////
-import {Camera, Player, Inventory, PopUpManager, Bar, AnimationFinal, AnimationFinalMultipleFiles} from "./classes.js";
+import {Camera, Player, Inventory, PopUpManager, Bar, AnimationFinal, AnimationFinalMultipleFiles, ChatInput} from "./classes.js";
 import {initializeQuadTree, move, cloneMe} from "./collision.js";
 import {calculateAllProjectiles, createProjectile} from "./projectiles.js";
 
 let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promises = [], players = {}, me = undefined,
     currentCoords = {}, animator = {state: "idle"}, uis = {}, gameState = {}, popUpManager = new PopUpManager(),
-    vendors = {}, animations = [], currentAnimations = [];
+    vendors = {}, animations = [], currentAnimations = [], messages = [];
 let camera = new Camera(0, 0, 0);
 let requestId;
 let quadTree = {};
@@ -18,7 +18,7 @@ let coins = 0;
 let isInDeadScreen = false;
 let fadingDeathScreen = 0;
 let fadingDeathScreenInc = 0.01;
-let lastMoveTime = (new Date()).getTime()
+let lastMoveTime = (new Date()).getTime();
 let matrix = null;
 let mobs;
 
@@ -58,6 +58,10 @@ function init() {
         socket.on("images", (res) => {
             imageNames = res;
             socket.emit("getdata");
+        });
+        socket.on("message", (message) => {
+            console.log(message);
+            addMessage(message, 3000);
         });
         socket.on("items", (res) => {
             items = res;
@@ -127,6 +131,12 @@ function configure() {
         actualMousePosition.x = mousePosition.x + camera.x;
         actualMousePosition.y = mousePosition.y + camera.y;
         openVendorInventory(actualMousePosition);
+        if(uis["chatinput"].check(mousePosition.x, mousePosition.y)){
+            uis["chatinput"].setFocus(true);
+        }
+        else{
+            uis["chatinput"].setFocus(false);
+        }
     });
 }
 
@@ -158,13 +168,14 @@ function setUpAnimations() {
     animator.player.addAnimation("runUPLEFT", images["run"], 0, 7, 7, 32, 32, 32, 32, speed);
     animator.player.addAnimation("idle", images["idle"], 0, 7, 4, 32, 32, 32, 32, 120);
 
-    createAnimationFinalFiles("expl_01", 24, 1, 100);
+    createAnimationFinalFiles("expl_02", 24, 1, 100);
 }
 
 function setUpUI() {
     uis["inventory"] = new Inventory(images["itemframe2"], 16, 200, 4, 4, 10, 5, gameState, images);
     uis["healthbar"] = new Bar(images["healthbar"], 8, cvs.height - 32, 0, 100);
-    uis["healthbarframe"] = new Bar(images["healthbarframe"], 8, cvs.height - 32, 100, 100)
+    uis["healthbarframe"] = new Bar(images["healthbarframe"], 8, cvs.height - 32, 100, 100);
+    uis["chatinput"] = new ChatInput(10, cvs.height - 70, 200, 25, 200, 25);
 }
 
 let scale = 1;
@@ -191,7 +202,6 @@ document.getElementById("canvas").addEventListener('mousemove', e => {
 
 
 function update() {
-
     cameraFollow();
     ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
     drawTiles2(14, 16, 64);
@@ -208,8 +218,6 @@ function update() {
     calculateAllProjectiles(projectiles, gameTime, quadTree, players,mobs)
     drawMapFront2(14, 16, 64);
 
-
-
     for (let ui in uis) {
         uis[ui].draw(ctx, camera);
     }
@@ -225,6 +233,7 @@ function update() {
     drawCurrentAnimations();
     drawPopUps();
     drawUI();
+    drawMessages();
     if(inStatsScreen){
         drawStats();
     }
@@ -232,6 +241,33 @@ function update() {
     //drawPlayerCollision()
     if(isInDeadScreen){
         drawDeadScreen();
+    }
+}
+
+function addMessage(messageObject, lifeTime){
+    let newMessage = {text:messageObject.text, origin:messageObject.origin, lifeTime:lifeTime, timeStarted:Date.now()};
+    messages.push(newMessage);
+}
+
+function drawMessages(){
+    let currentTime = Date.now();
+    let messagesToDelete = [];
+    let messagesCounter = [];
+    ctx.fillStyle = "rgba(0,0,0,0.8)";
+    ctx.font = "16px arial";
+    for (let messageIndex in messages){
+        let message = messages[messageIndex];
+        if(!messagesCounter[message.origin]){
+           messagesCounter[message.origin] = 0;
+        }
+        ctx.fillText(message.text, players[message.origin].x, players[message.origin].y - messagesCounter[message.origin]*14);
+        if(currentTime - message.timeStarted > message.lifeTime){
+            messagesToDelete.push(messageIndex);
+        }
+        messagesCounter[message.origin]++;
+    }
+    for(let messageToDeleteIndex in messagesToDelete){
+        messages.splice(messagesToDelete[messageToDeleteIndex], 1);
     }
 }
 
@@ -325,9 +361,12 @@ function createAnimationFinalFiles(baseImageName, countOfImage, startCount, spee
     animations[baseImageName] = newAnimation;
 }
 
-function addCurrentAnimation(baseImageName, x, y){
+function addCurrentAnimation(baseImageName, x, y, speed){
     let anim = animations[baseImageName];
-    let newAnim = new AnimationFinalMultipleFiles(baseImageName, anim.startColumn, anim.endColumn, anim.speed, x, y);
+    if(!speed){
+        speed = anim.speed;
+    }
+    let newAnim = new AnimationFinalMultipleFiles(baseImageName, anim.startColumn, anim.endColumn, speed, x, y);
     newAnim.imgs = anim.imgs;
     console.log(newAnim);
     anim.x = x;
@@ -738,16 +777,41 @@ function drawMapFront2(Xsize, Ysize, gridSize) {
 // });
 
 $(window).keydown((key) => {
+    if(key.key === "Backspace"){
+        uis["chatinput"].removeText();
+    }
+    if(key.key === "Enter"){
+        if(uis["chatinput"].focus){
+            uis["chatinput"].setFocus(false);
+            if(uis["chatinput"].text.trim() !== ""){
+                socket.emit("message", {text:uis["chatinput"].text});
+            }
+            uis["chatinput"].setText("");
+        }
+        else{
+            uis["chatinput"].setFocus(true);
+        }
+        return;
+    }
+    if(key.key === "Escape"){
+        uis["chatinput"].setFocus(false);
+        return;
+    }
+    if(uis["chatinput"].focus && key.keyCode >= 65 && key.keyCode <= 90 || key.keyCode === 32 || key.keyCode === 191 || key.keyCode >= 48 && key.keyCode <= 57){
+        uis["chatinput"].addText(key.key);
+        return;
+    }
     keys[key.key] = true;
     let keyPressed = key.key;
     if (key.key === "i") {
         gameState.inInventory = !gameState.inInventory;
         socket.emit("inventory",);
-        addCurrentAnimation("expl_01", me.x, me.y)
+        addCurrentAnimation("expl_02", me.x, me.y, 50)
     }
     if(keyPressed === "q"){
         inStatsScreen = !inStatsScreen;
     }
+
 });
 
 $(window).keyup((key) => {

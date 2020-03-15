@@ -130,6 +130,78 @@ class AnimationFinalMultipleFiles {
     }
 }
 
+class ChatInput{
+    constructor(x, y, width, height, blinkSpeed = 200, lengthOfStringToShow = 50, maximumTextLength = 60) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.text = "";
+        this.focus = false;
+        this.blinkSpeed = blinkSpeed;
+        this.animTime = Date.now();
+        this.currentTime = Date.now();
+        this.blinkOn = false;
+        this.lengthOfStringToShow = lengthOfStringToShow;
+        this.textToShow = this.text;
+        this.maximumTextLength = maximumTextLength;
+    }
+    draw(_ctx, _camera){
+        this.getTextToShow();
+        _ctx.beginPath();
+        _ctx.rect(_camera.x + this.x, _camera.y + this.y, this.width, this.height);
+        _ctx.stroke();
+        _ctx.fillStyle = "rgba(255,255,255,1)";
+        _ctx.fillRect(_camera.x + this.x, _camera.y + this.y, this.width, this.height);
+        _ctx.fillStyle = "rgba(0,0,0,1)";
+        _ctx.font = "16px ariel";
+        _ctx.fillText(this.textToShow,_camera.x + this.x, _camera.y + this.y + 20);
+        if(this.focus){
+            if(this.blinkOn){
+                _ctx.fillStyle = "rgb(10,8,6)";
+                _ctx.fillRect(_camera.x + this.x + 2 + (this.textToShow.length*7), _camera.y + this.y + 2, 2, this.height - 4);
+            }
+            this.currentTime = Date.now();
+            if (this.currentTime > this.animTime) {
+                this.blinkOn = !this.blinkOn;
+                this.animTime = this.currentTime + this.blinkSpeed;
+            }
+        }
+    }
+    getTextToShow(){
+        if(this.text.length < this.lengthOfStringToShow){
+            this.textToShow = this.text.substring(0, this.text.length);
+        }
+        this.textToShow = this.text.substring(this.text.length - this.lengthOfStringToShow, this.text.length);
+    }
+    setFocus(focus){
+        this.blinkOn = !!focus;
+        this.focus = focus;
+    }
+    addText(text){
+        if(this.text.length < this.maximumTextLength){
+            this.text = this.text + text;
+        }
+    }
+    removeText(){
+        this.text = this.text.substring(0, this.text.length - 1);
+    }
+    check(x, y){
+        return x > this.x && x < this.x + this.width && y > this.y && y < this.y + this.height;
+    }
+    setText(text){
+        this.text = text;
+    }
+    move(x, y){
+        this.x+=x;
+        this.y+=y;
+    }
+    scale(w, h){
+        this.width += w;
+        this.height += h;
+    }
+}
+
 class Player {
     constructor() {
         this.animations = [];
@@ -366,5 +438,6 @@ export {
     ImageList,
     CanvasManager,
     GameManager,
-    SocketManager
+    SocketManager,
+    ChatInput
 }

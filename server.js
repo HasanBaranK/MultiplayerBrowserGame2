@@ -232,6 +232,9 @@ io.on('connection', function (socket) {
     socket.on('inventory', function(){
       socket.emit("inventory", inventories[socket.id]);
     });
+    socket.on('message', function(data){
+       io.emit("message", {text:data.text, origin:socket.id});
+    });
     socket.on('projectile', function (projectile){
 
         projectile.origin = socket.id;
