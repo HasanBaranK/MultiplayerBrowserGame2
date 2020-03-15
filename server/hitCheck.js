@@ -5,6 +5,71 @@ module.exports = {
     calculateAllProjectiles
 }
 
+function distance(sx,sy, x, y) {
+    let xDist = Math.abs(sx - x);
+    let yDist = Math.abs(sy - y);
+
+    return  Math.sqrt(xDist * xDist + yDist * yDist)
+}
+
+function explosionHitCheck(x,y,explosionRadius, explosionDamage, players,io,items,currentGameTime) {
+    let anyOneHit = false;
+    for (let key in players) {
+        let object;
+        if(players[key].mob !== undefined && players[key].mob !== null){
+            object = cloneMe(players[key].mob)
+        }else {
+            object = cloneMe(players[key])
+        }
+        let offset = {
+            x: 10,
+            y: 17,
+            width: 14,
+            height: 14,
+        }
+        object.x += offset.x
+        object.y += offset.y
+        object.width = offset.width
+        object.height = offset.height
+
+        let dist = distance(object.x,object.y, x, y);
+
+        if(dist < explosionRadius){
+            anyOneHit = true;
+            if(players[key].mob !== undefined && players[key].mob !== null){
+                players[key].mob.health -= explosionDamage / dist;
+                console.log(players[key].mob.health)
+                if (players[key].mob.health <= 0) {
+                    console.log(key)
+                    players.splice(key, 1);
+                    //delete mobs[object.key]
+                    //console.log("dead")
+                    addItem(io,items,"coin",players[key].mob.x,players[key].mob.y,players[key].mob.x +5,players[key].mob.y +5);
+                }
+                io.emit("mobs", players);
+            }else {
+                players[key].health -= explosionDamage / dist;
+                if (players[key].health <= 0) {
+                    players[key].isDead = true;
+                    // console.log("dead")
+                }
+                let obj = {
+                    players: players,
+                    gameTime: currentGameTime
+                }
+                io.emit("players", obj);
+            }
+        }
+
+
+
+
+    }
+
+
+    return anyOneHit;
+}
+
 function calculateAllProjectiles(io,projectiles, currentGameTime, players,quadTree,mobs,items) {
 
     for (let i = 0; i < projectiles.length; i++) {
@@ -15,8 +80,10 @@ function calculateAllProjectiles(io,projectiles, currentGameTime, players,quadTr
         let t = 60;
         let v0 = projectile.power;
         let g = v0 / t;
-
         if (v0 / g <= time) {
+            let x = projectile.startX + (v0 * time - 1 / 2 * g * time * time) * projectile.cos;
+            let y = projectile.startY+ (v0 * time - 1 / 2 * g * time * time) * projectile.sin;
+            doExplosion(x,y,projectile,players,io,items,mobs)
             projectiles.splice(i, 1);
             //console.log((v0 * time - 1 / 2 * g * time * time))
             continue;
@@ -33,12 +100,14 @@ function calculateAllProjectiles(io,projectiles, currentGameTime, players,quadTr
             let objects = collisionFunctions.quadTreeObjectsByPosition(obj, quadTree);
             let object = collisionFunctions.checkCollision(obj, objects)
             if (object !== false) {
+                doExplosion(x,y,projectile,players,io,items,mobs)
                 projectiles.splice(i, 1);
                 //console.log("hit object");
                 continue;
             }
             object = checkIfHitPlayer(obj, players,projectile.origin)
             if (object !== false) {
+                doExplosion(x,y,projectile,players,io,items,mobs)
                 projectiles.splice(i, 1);
                 //console.log("hit player");
                 object.health -= 10;
@@ -58,6 +127,7 @@ function calculateAllProjectiles(io,projectiles, currentGameTime, players,quadTr
             }else {
                 object = checkIfHitMob(obj, mobs)
                 if (object !== false) {
+                    doExplosion(x,y,projectile,players,io,items,mobs)
                     projectiles.splice(i, 1);
                     //console.log("hit mob");
                     object.mob.health -= 10;
@@ -75,6 +145,13 @@ function calculateAllProjectiles(io,projectiles, currentGameTime, players,quadTr
         }
     }
 }
+function doExplosion(x,y,projectile,players,io,items,mobs) {
+    if(projectile.explosive) {
+        let anyOneHit = explosionHitCheck(x, y, projectile.explosionRadius, projectile.explosionDamage, players, io, items)
+        anyOneHit = explosionHitCheck(x, y, projectile.explosionRadius, projectile.explosionDamage, mobs, io, items)
+    }
+}
+
 function cloneMe(me) {
     return {
         x: me.x,

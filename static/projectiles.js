@@ -1,7 +1,7 @@
-import {sendProjectileServer, drawImageRotation, popUpManager} from "./game.js"
+import {sendProjectileServer, drawImageRotation, popUpManager,addCurrentAnimation} from "./game.js"
 import {checkCollision, quadTreeObjectsByPosition} from "./collision.js"
 
-function createProjectile(projectiles, name, startX, startY, currentX, currentY, dirX, dirY, power, quadTree, players, gameTimeFire,width,height) {
+function createProjectile(projectiles, name, startX, startY, currentX, currentY, dirX, dirY, power, quadTree, players, gameTimeFire,width,height,explosive,explosiveDistance,explosiveDamage,damage) {
     let up = dirY - startY
     let down = dirX - startX
     let hip = Math.sqrt(up * up + down * down);
@@ -15,12 +15,12 @@ function createProjectile(projectiles, name, startX, startY, currentX, currentY,
     console.log(cos)
     console.log("info")*/
     //drawImageRotation(ctx, name, currentX, currentY, 1, degree);
-    let projectile = makeProjectileObject(projectiles, name, startX, startY, cos, sin, power, gameTimeFire,width,height);
+    let projectile = makeProjectileObject(projectiles, name, startX, startY, cos, sin, power, gameTimeFire,width,height,explosive,explosiveDistance,explosiveDamage,damage);
     //console.log("degree")
     sendProjectileServer(projectile);
 }
 
-function makeProjectileObject(projectiles, name, startX, startY, cos, sin, power, gameTimeFire,width,height) {
+function makeProjectileObject(projectiles, name, startX, startY, cos, sin, power, gameTimeFire,width,height,explosive,explosiveDistance,explosiveDamage,damage) {
     let Projectile = {
         name: name,
         startX: startX,
@@ -32,13 +32,52 @@ function makeProjectileObject(projectiles, name, startX, startY, cos, sin, power
         power: power,
         gameTimeFire: gameTimeFire,
         origin: "",
+        explosive: explosive,
+        explosionRadius: explosiveDistance,
+        explosionDamage: explosiveDamage,
+        damage: damage
     }
     return Projectile;
+}
+function distance(sx,sy, x, y) {
+    let xDist = Math.abs(sx - x);
+    let yDist = Math.abs(sy - y);
+
+    return  Math.sqrt(xDist * xDist + yDist * yDist)
+}
+
+function explosionHitCheck(x,y,explosionRadius, explosionDamage, players) {
+    let anyOneHit = false;
+    for (let key in players) {
+        let object = cloneMe(players[key])
+        let offset = {
+            x: 10,
+            y: 17,
+            width: 14,
+            height: 14,
+        }
+        object.x += offset.x
+        object.y += offset.y
+        object.width = offset.width
+        object.height = offset.height
+
+        let dist = distance(object.x,object.y, x, y);
+
+        if(dist < explosionRadius){
+            anyOneHit = true;
+            popUpManager.addPopUp(object.x, object.y, explosionDamage / dist);
+        }
+
+    }
+
+
+    return anyOneHit;
 }
 
 function calculateAllProjectiles(projectiles, currentGameTime, quadTree,players,mobs) {
 
     for (let i = 0; i < projectiles.length; i++) {
+        console.log(projectiles[i])
         let projectile = projectiles[i];
         let time = currentGameTime - projectile.gameTimeFire;
 
@@ -46,9 +85,10 @@ function calculateAllProjectiles(projectiles, currentGameTime, quadTree,players,
         let t = 60;
         let v0 = projectile.power;
         let g = v0 / t;
-
-        if (v0 / g <= time) {
-            projectiles.splice(i, 1);
+        if (v0 / g <= time  ) {
+            let x = projectile.startX + (v0 * time - 1 / 2 * g * time * time) * projectile.cos;
+            let y = projectile.startY + (v0 * time - 1 / 2 * g * time * time) * projectile.sin;
+            doExplosion(projectiles,i,x,y,players,mobs);
             //console.log((v0 * time - 1 / 2 * g * time * time))
             continue;
         } else {
@@ -67,15 +107,15 @@ function calculateAllProjectiles(projectiles, currentGameTime, quadTree,players,
             let objects = quadTreeObjectsByPosition(obj, quadTree);
             let object = checkCollision(obj, objects);
             if (object !== false) {
-                projectiles.splice(i, 1);
+                doExplosion(projectiles,i,x,y,players,mobs);
                 continue;
             }
             object = checkIfHitPlayer(obj, players,projectile.origin)
             //console.log(object)
             if (object !== false) {
-                projectiles.splice(i, 1);
+                doExplosion(projectiles,i,x,y,players,mobs);
                 //console.log("hit");
-                popUpManager.addPopUp(object.x, object.y, 10);
+                popUpManager.addPopUp(object.x, object.y, projectile.damage);
                 object.health -= 10;
                 if (object.health <= 0) {
                     object.isDead = true;
@@ -88,16 +128,18 @@ function calculateAllProjectiles(projectiles, currentGameTime, quadTree,players,
             }else {
                 object = checkIfHitMob(obj, mobs)
                 if (object !== false) {
-                    projectiles.splice(i, 1);
-                    popUpManager.addPopUp(object.mob.x, object.mob.y, 10);
+                    doExplosion(projectiles,i,x,y,players,mobs);
+                    popUpManager.addPopUp(object.mob.x, object.mob.y, projectile.damage);
                     if (object.mob.health <= 0) {
-                        mobs.splice(object.key, 1);
+                       mobs.splice(object.key, 1);
                     }
                     continue;
                 }
             }
             drawImageRotation(projectile.name, x, y, 1, projectile.sin / projectile.cos, projectile.sin, projectile.cos,projectile.width,projectile.height);
-        }/*
+        }
+
+        /*
             /*console.log(projectile.cos * projectile.power/ Math.pow(1.1,time))
             console.log(projectile.sin * projectile.power/ Math.pow(1.1,time))*/
         //let currentX = Math.floor(projectile.startX + projectile.cos * projectile.power/ Math.pow(1.3,time))
@@ -107,7 +149,15 @@ function calculateAllProjectiles(projectiles, currentGameTime, quadTree,players,
 
     }
 }
-
+function doExplosion(projectiles,i,x,y,players,mobs) {
+    let projectile = projectiles[i];
+    if(projectile.explosive) {
+        addCurrentAnimation("expl_08", x, y)
+        explosionHitCheck(x, y, projectile.explosionRadius, projectile.explosionDamage, players)
+        explosionHitCheck(x, y, projectile.explosionRadius, projectile.explosionDamage, mobs)
+    }
+    projectiles.splice(i, 1);
+}
 function checkIfHitMob(projectile,mobs) {
 
     for (let key in mobs) {

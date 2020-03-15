@@ -75,7 +75,7 @@ function findClosestTarget(mob, players, searchDistance,projectiles,quadTree,gam
 function attack(mob,players) {
 
 }
-function makeProjectileObject(projectiles, name, startX, startY, cos, sin, power, gameTimeFire,width,height) {
+function makeProjectileObject(projectiles, name, startX, startY, cos, sin, power, gameTimeFire,width,height,explosive,explosiveDistance,explosiveDamage,damage) {
     let Projectile = {
         name: name,
         startX: startX,
@@ -87,6 +87,10 @@ function makeProjectileObject(projectiles, name, startX, startY, cos, sin, power
         power: power,
         gameTimeFire: gameTimeFire,
         origin: "0",
+        explosive: explosive,
+        explosionRadius: explosiveDistance,
+        explosionDamage: explosiveDamage,
+        damage: damage
     }
     return Projectile;
 }
@@ -96,7 +100,7 @@ function attackProjectile(io,mob,player,projectiles,quadTree,gameTime) {
     let hip = Math.sqrt(up * up + down * down);
     let sin = up / hip;
     let cos = down / hip;
-    let projectile = makeProjectileObject(projectiles,"arrow2",mob.x,mob.y,cos,sin,15, gameTime,24,8)
+    let projectile = makeProjectileObject(projectiles,"arrow2",mob.x,mob.y,cos,sin,15, gameTime,24,8,false,0,0,10)
     projectile.origin = "0";
     projectile.gameTimeFire = gameTime;
     let obj = {

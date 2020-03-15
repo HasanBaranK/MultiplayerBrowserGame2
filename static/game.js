@@ -21,7 +21,7 @@ let fadingDeathScreenInc = 0.01;
 let lastMoveTime = (new Date()).getTime();
 let matrix = null;
 let mobs;
-
+let weaponPicked = 1;
 let mouseOnX;
 let mouseOnY;
 
@@ -168,7 +168,16 @@ function setUpAnimations() {
     animator.player.addAnimation("runUPLEFT", images["run"], 0, 7, 7, 32, 32, 32, 32, speed);
     animator.player.addAnimation("idle", images["idle"], 0, 7, 4, 32, 32, 32, 32, 120);
 
-    createAnimationFinalFiles("expl_02", 24, 1, 100);
+    createAnimationFinalFiles("expl_01", 24, 1, 15);
+    createAnimationFinalFiles("expl_02", 24, 1, 15);
+    createAnimationFinalFiles("expl_03", 23, 1, 15);
+    createAnimationFinalFiles("expl_04", 24, 1, 15);
+    createAnimationFinalFiles("expl_06", 32, 1, 15);
+    createAnimationFinalFiles("expl_07", 32, 1, 15);
+    createAnimationFinalFiles("expl_08", 32, 1, 15);
+    createAnimationFinalFiles("expl_09", 32, 1, 15);
+    createAnimationFinalFiles("expl_10", 32, 1, 15);
+    createAnimationFinalFiles("expl_11", 24, 1, 15);
 }
 
 function setUpUI() {
@@ -205,6 +214,7 @@ function update() {
     cameraFollow();
     ctx.clearRect(camera.x, camera.y, cvs.width, cvs.height);
     drawTiles2(14, 16, 64);
+
     //drawMapBack(14, 16, 64);
     drawPlayer();
     drawPlayers();
@@ -427,6 +437,14 @@ function doTheMovement() {
         fireSpeed += 5
         console.log(fireSpeed)
     }
+    if (keys["1"]) {
+        weaponPicked = 1;
+        console.log(weaponPicked)
+    }
+    if (keys["2"]) {
+        weaponPicked = 2;
+        console.log(weaponPicked)
+    }
     if (locationChanged) {
         lastMoveTime = (new Date()).getTime()
         socket.emit("movement", {
@@ -621,7 +639,11 @@ function printMousePos(event) {
     console.log(currentCoords.x,currentCoords.y);
     console.log(currentCoords.x,currentCoords.y);*/
     if (!isInDeadScreen) {
-        createProjectile(projectiles, "arrow3", me.x , me.y, me.x, me.y, mouseOnX, mouseOnY, 15, quadTree, players, gameTime,24,8)
+        if(weaponPicked === 1) {
+            createProjectile(projectiles, "arrow3", me.x, me.y, me.x, me.y, mouseOnX, mouseOnY, 15, quadTree, players, gameTime, 24, 8, false, 0, 0,10)
+        }else  if(weaponPicked === 2){
+            createProjectile(projectiles, "arrow3", me.x, me.y, me.x, me.y, mouseOnX, mouseOnY, 15, quadTree, players, gameTime, 24, 8, true, 100, 50,10)
+        }
     }
 }
 
@@ -630,9 +652,9 @@ document.getElementById("canvas").onmousedown = function(event) {
     try {
         clearInterval(holdInterval);
     }catch (e) {
-        
+
     }
-    
+
     holdInterval = setInterval(function(){ printMousePos(event)}, fireSpeed);
 }
 
@@ -806,7 +828,8 @@ $(window).keydown((key) => {
     if (key.key === "i") {
         gameState.inInventory = !gameState.inInventory;
         socket.emit("inventory",);
-        addCurrentAnimation("expl_02", me.x, me.y, 50)
+        //addCurrentAnimation("expl_01", me.x, me.y)
+        addCurrentAnimation("expl_08", me.x, me.y)
     }
     if(keyPressed === "q"){
         inStatsScreen = !inStatsScreen;
@@ -819,7 +842,6 @@ $(window).keyup((key) => {
 });
 
 //////////////////////UTILS/////////////////////////////////
-
 function loadImagesThenAnimate(folders) {
     for (let folder in folders) {
         for (let image in folders[folder]) {
@@ -995,5 +1017,6 @@ export {
     animate,
     sendProjectileServer,
     drawImageRotation,
-    popUpManager
+    popUpManager,
+    addCurrentAnimation
 }
