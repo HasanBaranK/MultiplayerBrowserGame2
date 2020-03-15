@@ -555,6 +555,12 @@ function printMousePos(event) {
 
 let holdInterval
 document.getElementById("canvas").onmousedown = function(event) {
+    try {
+        clearInterval(holdInterval);
+    }catch (e) {
+        
+    }
+    
     holdInterval = setInterval(function(){ printMousePos(event)}, fireSpeed);
 }
 
@@ -678,7 +684,7 @@ function drawMapFront2(Xsize, Ysize, gridSize) {
 
         let distX = Math.abs(me.x - thing.x);
         let distY = Math.abs(me.y - thing.y);
-        if(distX <125 && distY <125){
+        if(distX <200 && distY <125 &&  thing.y + 50 >me.y){
             ctx.globalAlpha = 0.6;
         }
         ctx.drawImage(images[thing.name], thing.x, thing.y);
