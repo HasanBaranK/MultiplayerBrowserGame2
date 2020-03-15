@@ -819,7 +819,7 @@ $(window).keydown((key) => {
         uis["chatinput"].setFocus(false);
         return;
     }
-    if(uis["chatinput"].focus && key.keyCode >= 65 && key.keyCode <= 90 || key.keyCode === 32 || key.keyCode === 191 || key.keyCode >= 48 && key.keyCode <= 57){
+    if(uis["chatinput"].focus && ((key.keyCode >= 65 && key.keyCode <= 90) || key.keyCode === 32 || key.keyCode === 191 || (key.keyCode >= 48 && key.keyCode <= 57))){
         uis["chatinput"].addText(key.key);
         return;
     }
