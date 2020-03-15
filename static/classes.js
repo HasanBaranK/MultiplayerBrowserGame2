@@ -54,6 +54,82 @@ class Animation {
     }
 }
 
+class AnimationFinal {
+    constructor(img, startColumn, endColumn, row, width, height, cWidth, cHeight, speed, x, y) {
+        this.x = x;
+        this.y = y;
+        this.img = img;
+        this.startColumn = startColumn;
+        this.endColumn = endColumn;
+        this.row = row;
+        this.width = width;
+        this.height = height;
+        this.cWidth = cWidth;
+        this.cHeight = cHeight;
+        this.speed = speed;
+
+        this.currentColumn = this.startColumn;
+        this.animTime = Date.now();
+        this.currentTime = Date.now();
+    }
+
+    draw(_ctx, x = this.x, y = this.y) {
+        if (this.currentColumn > this.endColumn) {
+            this.currentColumn = this.startColumn;
+            return true;
+        }
+        _ctx.drawImage(this.img, this.currentColumn * this.width, this.row * this.height,
+            this.width, this.height, x, y, this.cWidth, this.cHeight);
+        this.currentTime = Date.now();
+        if (this.currentTime > this.animTime) {
+            this.currentColumn++;
+            this.animTime = this.currentTime + this.speed;
+        }
+        return false;
+    }
+
+    reset() {
+        this.currentColumn = this.startColumn;
+    }
+}
+
+class AnimationFinalMultipleFiles {
+    constructor(baseImageName, startColumn, endColumn, speed, x = 0, y = 0) {
+        this.x = x;
+        this.y = y;
+        this.imgs = {};
+        this.startColumn = startColumn;
+        this.endColumn = endColumn;
+        this.speed = speed;
+        this.baseImageName = baseImageName;
+        this.currentColumn = this.startColumn;
+        this.animTime = Date.now();
+        this.currentTime = Date.now();
+    }
+
+    draw(_ctx, x = this.x, y = this.y) {
+        if (this.currentColumn > this.endColumn) {
+            this.currentColumn = this.startColumn;
+            return true;
+        }
+        _ctx.drawImage(this.imgs[this.baseImageName + " (" + this.currentColumn + ")"], x, y);
+        this.currentTime = Date.now();
+        if (this.currentTime > this.animTime) {
+            this.currentColumn++;
+            this.animTime = this.currentTime + this.speed;
+        }
+        return false;
+    }
+
+    reset() {
+        this.currentColumn = this.startColumn;
+    }
+
+    addImage(img, name){
+        this.imgs[name] = img;
+    }
+}
+
 class Player {
     constructor() {
         this.animations = [];
@@ -282,6 +358,8 @@ export {
     Camera,
     Inventory,
     Animation,
+    AnimationFinal,
+    AnimationFinalMultipleFiles,
     Player,
     PopUpManager,
     Bar,

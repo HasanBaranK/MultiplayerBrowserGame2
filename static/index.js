@@ -208,7 +208,7 @@ function update() {
     drawPlayer();
     drawPlayers();
     drawMobs(mobs)
-    calculateAllProjectiles(projectiles, gameTime, quadTree, players,mobs)
+    calculateAllProjectiles(projectiles, gameTime, quadTree, players,mobs);
     drawMapFront2(14, 16, 64);
 
 

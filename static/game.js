@@ -1,11 +1,11 @@
 /////////////////////INITIALIZATION CODE//////////////////////////
-import {Camera, Player, Inventory, PopUpManager, Bar, ImageList} from "./classes.js";
+import {Camera, Player, Inventory, PopUpManager, Bar, AnimationFinal, AnimationFinalMultipleFiles} from "./classes.js";
 import {initializeQuadTree, move, cloneMe} from "./collision.js";
 import {calculateAllProjectiles, createProjectile} from "./projectiles.js";
 
 let cvs, ctx, keys = {}, socket, data = {}, images = {}, imageNames = {}, promises = [], players = {}, me = undefined,
     currentCoords = {}, animator = {state: "idle"}, uis = {}, gameState = {}, popUpManager = new PopUpManager(),
-    vendors = {};
+    vendors = {}, animations = [], currentAnimations = [];
 let camera = new Camera(0, 0, 0);
 let requestId;
 let quadTree = {};
@@ -75,7 +75,7 @@ function init() {
             projectiles.push(res.projectile)
 
         });
-        socket.on("inventory", (res) => {a
+        socket.on("inventory", (res) => {
             gameState.inventory = res;
         });
         socket.on("mobs", (res) => {
@@ -156,8 +156,9 @@ function setUpAnimations() {
     animator.player.addAnimation("runDOWNLEFT", images["run"], 0, 7, 5, 32, 32, 32, 32, speed);
     animator.player.addAnimation("runLEFT", images["run"], 0, 7, 6, 32, 32, 32, 32, speed);
     animator.player.addAnimation("runUPLEFT", images["run"], 0, 7, 7, 32, 32, 32, 32, speed);
-
     animator.player.addAnimation("idle", images["idle"], 0, 7, 4, 32, 32, 32, 32, 120);
+
+    createAnimationFinalFiles("expl_01", 24, 1);
 }
 
 function setUpUI() {
@@ -221,6 +222,7 @@ function update() {
     /* if(matrix!==null) {
          drawMatrix(matrix, 16)
      }*/
+    drawCurrentAnimations();
     drawPopUps();
     drawUI();
     if(inStatsScreen){
@@ -230,6 +232,18 @@ function update() {
     //drawPlayerCollision()
     if(isInDeadScreen){
         drawDeadScreen();
+    }
+}
+
+function drawCurrentAnimations(){
+    let animationsToDelete = [];
+    for (let animation in currentAnimations){
+        if(currentAnimations[animation].draw(ctx)){
+            animationsToDelete.push(animation);
+        }
+    }
+    for (let animationToDelete in animationsToDelete){
+        currentAnimations.splice(animationsToDelete[animationToDelete], 1);
     }
 }
 function drawMobs(mobs){
@@ -300,6 +314,25 @@ function drawItems () {
             ctx.restore();
         }
     }
+}
+
+function createAnimationFinalFiles(baseImageName, countOfImage, startCount){
+    let newAnimation = new AnimationFinalMultipleFiles( baseImageName, startCount, countOfImage+startCount-1, 100);
+    for (let i = 0; i < countOfImage; i++){
+        let name = baseImageName+" ("+(i+startCount)+")";
+        newAnimation.addImage(images[name], name);
+    }
+    animations[baseImageName] = newAnimation;
+}
+
+function addCurrentAnimation(baseImageName, x, y){
+    let anim = animations[baseImageName];
+    let newAnim = new AnimationFinalMultipleFiles(baseImageName, anim.startColumn, anim.endColumn, anim.speed, x, y);
+    newAnim.imgs = anim.imgs;
+    console.log(newAnim);
+    anim.x = x;
+    anim.y = y;
+    currentAnimations.push(newAnim);
 }
 
 setInterval(function () {
@@ -710,6 +743,7 @@ $(window).keydown((key) => {
     if (key.key === "i") {
         gameState.inInventory = !gameState.inInventory;
         socket.emit("inventory",);
+        addCurrentAnimation("expl_01", me.x, me.y)
     }
     if(keyPressed === "q"){
         inStatsScreen = !inStatsScreen;
