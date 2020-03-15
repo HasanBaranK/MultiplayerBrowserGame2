@@ -198,12 +198,12 @@ function update() {
     drawPlayer();
     drawPlayers();
     drawMobs(mobs)
-    ctx.save()
-    ctx.beginPath();
-    ctx.moveTo(me.x, me.y);
-    ctx.lineTo(mouseOnX, mouseOnY);
-    ctx.stroke();
-    ctx.restore();
+    // ctx.save()
+    // ctx.beginPath();
+    // ctx.moveTo(me.x, me.y);
+    // ctx.lineTo(mouseOnX, mouseOnY);
+    // ctx.stroke();
+    // ctx.restore();
     calculateAllProjectiles(projectiles, gameTime, quadTree, players,mobs)
     drawMapFront2(14, 16, 64);
 
