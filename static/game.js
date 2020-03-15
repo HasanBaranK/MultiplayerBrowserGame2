@@ -158,7 +158,7 @@ function setUpAnimations() {
     animator.player.addAnimation("runUPLEFT", images["run"], 0, 7, 7, 32, 32, 32, 32, speed);
     animator.player.addAnimation("idle", images["idle"], 0, 7, 4, 32, 32, 32, 32, 120);
 
-    createAnimationFinalFiles("expl_01", 24, 1);
+    createAnimationFinalFiles("expl_01", 24, 1, 100);
 }
 
 function setUpUI() {
@@ -316,8 +316,8 @@ function drawItems () {
     }
 }
 
-function createAnimationFinalFiles(baseImageName, countOfImage, startCount){
-    let newAnimation = new AnimationFinalMultipleFiles( baseImageName, startCount, countOfImage+startCount-1, 100);
+function createAnimationFinalFiles(baseImageName, countOfImage, startCount, speed = 100){
+    let newAnimation = new AnimationFinalMultipleFiles( baseImageName, startCount, countOfImage+startCount-1, speed);
     for (let i = 0; i < countOfImage; i++){
         let name = baseImageName+" ("+(i+startCount)+")";
         newAnimation.addImage(images[name], name);
