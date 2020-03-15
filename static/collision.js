@@ -49,7 +49,6 @@ function move(me,direction, quadTree, speed,lastMove) {
 
     }else {
         detail =0;
-        console.log(detail)
     }
     ///lastMove = currentTime;
     if (direction === 0) {

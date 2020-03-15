@@ -162,7 +162,7 @@ function loadImagesThenAnimate(folders) {
 let mapEditorMode = false;
 let imageListObject;
 let imageSelected = undefined;
-let gridSize = 32;
+let gridSize = 64;
 let gridBasedMapArray = [];
 let nonGridBasedMapArray = [];
 let mapXMin = 0;

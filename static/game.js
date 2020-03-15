@@ -22,6 +22,9 @@ let lastMoveTime = (new Date()).getTime()
 let matrix = null;
 let mobs;
 
+let mouseOnX;
+let mouseOnY;
+
 $(document).ready(init)
 ;
 let mousePosition = {};
@@ -179,7 +182,11 @@ let scale = 1;
 //     cameraFollow()
 //     return false;
 // }, false);
+document.getElementById("canvas").addEventListener('mousemove', e => {
+    mouseOnX = e.clientX + camera.x
+    mouseOnY = e.clientY+ camera.y
 
+});
 
 
 function update() {
@@ -191,6 +198,12 @@ function update() {
     drawPlayer();
     drawPlayers();
     drawMobs(mobs)
+    ctx.save()
+    ctx.beginPath();
+    ctx.moveTo(me.x, me.y);
+    ctx.lineTo(mouseOnX, mouseOnY);
+    ctx.stroke();
+    ctx.restore();
     calculateAllProjectiles(projectiles, gameTime, quadTree, players,mobs)
     drawMapFront2(14, 16, 64);
 
@@ -296,7 +309,7 @@ setInterval(function () {
     gameTime = updateGameTime(gameTime, 1);
 
 }, 1000 / 60);
-
+let fireSpeed = 300;
 function doTheMovement() {
     let locationChanged = false;
 
@@ -330,6 +343,17 @@ function doTheMovement() {
         meX = meX - meX % 32;
         meY = meY - meY % 32;
         console.log(meX + "," + meY)
+        console.log(mouseOnX + "," + mouseOnY)
+    }
+    if (keys["t"]) {
+        if(fireSpeed >= 5) {
+            fireSpeed -= 5
+        }
+        console.log(fireSpeed)
+    }
+    if (keys["y"]) {
+        fireSpeed += 5
+        console.log(fireSpeed)
     }
     if (locationChanged) {
         lastMoveTime = (new Date()).getTime()
@@ -511,6 +535,8 @@ function cameraFollow() {
         let yDifference = (currentCoords.y - me.y);
         camera.move(ctx, -xDifference, -yDifference);
 
+        mouseOnX -= xDifference
+        mouseOnY -= yDifference
         currentCoords.x = me.x ;
         currentCoords.y = me.y ;
     }
@@ -523,11 +549,19 @@ function printMousePos(event) {
     console.log(currentCoords.x,currentCoords.y);
     console.log(currentCoords.x,currentCoords.y);*/
     if (!isInDeadScreen) {
-        createProjectile(projectiles, "arrow3", me.x , me.y, me.x, me.y, event.clientX + camera.x, event.clientY + camera.y, 15, quadTree, players, gameTime,24,8)
+        createProjectile(projectiles, "arrow3", me.x , me.y, me.x, me.y, mouseOnX, mouseOnY, 15, quadTree, players, gameTime,24,8)
     }
 }
 
-document.getElementById("canvas").addEventListener("click", printMousePos);
+let holdInterval
+document.getElementById("canvas").onmousedown = function(event) {
+    holdInterval = setInterval(function(){ printMousePos(event)}, fireSpeed);
+}
+
+document.getElementById("canvas").onmouseup = function() {
+    clearInterval(holdInterval);
+}
+//document.getElementById("canvas").addEventListener("click", printMousePos);
 
 function drawTiles(Xsize, Ysize, gridSize) {
     let meX = Math.floor(me.x);
@@ -641,7 +675,15 @@ function drawMapFront2(Xsize, Ysize, gridSize) {
         let thing = data.treeMap[x];
         ctx.save()
         ctx.scale(scale,scale)
+
+        let distX = Math.abs(me.x - thing.x);
+        let distY = Math.abs(me.y - thing.y);
+        if(distX <125 && distY <125){
+            ctx.globalAlpha = 0.6;
+        }
         ctx.drawImage(images[thing.name], thing.x, thing.y);
+
+
         ctx.restore()
     }
 
