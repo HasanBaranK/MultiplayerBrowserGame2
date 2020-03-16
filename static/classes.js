@@ -309,36 +309,52 @@ class Bar {
 }
 
 class ImageList {
-    constructor(images, x, y, imgWidth, imgHeight, xLimit, xOff = 0, yOff = 0) {
+    constructor(images, x, y, imgWidth, imgHeight, xLimit, yLimit, xOff = 0, yOff = 0) {
         this.images = images;
+        this.imagesKeys = Object.keys(this.images);
         this.x = x;
         this.y = y;
         this.imgWidth = imgWidth;
         this.imgHeight = imgHeight;
         this.xLimit = xLimit;
+        this.yLimit = yLimit;
         this.xOff = xOff;
         this.yOff = yOff;
+        this.startIndex = 0;
     }
 
     draw(_ctx, _camera) {
-
         _ctx.fillStyle = "white";
-        _ctx.fillRect(this.x - 2 + _camera.x, this.y - 2 + _camera.y, this.xLimit * (this.imgWidth + this.xOff), 20 * (this.imgHeight + this.yOff));
+        _ctx.fillRect(this.x + _camera.x, this.y + _camera.y, this.xLimit * (this.imgWidth + this.xOff), (this.yLimit)*(this.imgHeight + this.yOff));
         _ctx.fillStyle = "black";
         let xIndex = 0;
         let yIndex = 0;
-        for (let imageName in this.images) {
+        for (let i = this.startIndex; i < this.imagesKeys.length; i++){
+            let imageName = this.imagesKeys[i];
             let image = this.images[imageName];
             let xReal = this.x + (xIndex * (this.xOff + this.imgWidth)) + _camera.x;
             let yReal = this.y + (yIndex * (this.yOff + this.imgHeight)) + _camera.y;
             _ctx.drawImage(image, xReal, yReal, this.imgWidth, this.imgHeight);
             xIndex++;
-            if (xIndex == this.xLimit) {
+            if (xIndex === this.xLimit) {
                 yIndex++;
                 xIndex = 0;
             }
+            if(yIndex === this.yLimit){
+                break;
+            }
         }
-        yIndex++;
+    }
+    check(x, y){
+        let xIndex = Math.floor(x/(this.imgWidth + this.xOff));
+        let yIndex = Math.floor(y/(this.imgHeight + this.yOff));
+        if(xIndex > this.xLimit || yIndex > this.yLimit) return "";
+        return (this.imagesKeys[xIndex + yIndex*this.xLimit + this.startIndex])
+    }
+    scroll(dir){
+        if(this.startIndex + dir >= 0 && this.startIndex + dir < this.imagesKeys.length){
+            this.startIndex+=dir;
+        }
     }
 }
 
@@ -368,8 +384,12 @@ class GameManager {
         this.keys = [];
         this.promises = [];
         this.mouseClicked = false;
+        this.keyEventListeners = [];
         $(document).keydown((evt) => {
             this.keys[evt.key] = true;
+            this.keyEventListeners.forEach((callback)=>{
+                callback(evt);
+            });
         });
         $(document).keyup((evt) => {
             this.keys[evt.key] = false;
@@ -392,6 +412,10 @@ class GameManager {
         return Promise.all(this.promises)
     }
 
+    addKeyListener(keyEventListener){
+        this.keyEventListeners.push(keyEventListener);
+    }
+
 }
 
 class CanvasManager {
@@ -401,6 +425,8 @@ class CanvasManager {
         this.camera = new Camera(0, 0);
         this.mouseWorld = {};
         this.mouseScreen = {};
+        this.rightMouseClicked = false;
+        this.leftMouseClicked = false;
     }
 
     clear() {
