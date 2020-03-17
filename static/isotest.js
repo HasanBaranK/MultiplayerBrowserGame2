@@ -8,13 +8,17 @@ let isos = [];
 let added = [];
 let tileWidth = 100;
 let tileHeight = tileWidth / 2;
-let maxX = 100;
-let maxY = 100;
+let maxX = 8;
+let maxY = 8;
 let toDrawGrid = true;
 let imageList;
 let lvlToAddTile = 0;
 let displayOnlyCurrentLevel = false;
 let imageToDraw = "";
+let xyFunction = getXY0;
+let currentRotation = 0;
+let previousRotation = 0;
+let lvlStart = 0, lvlIncrement = 1, indexXStart = 0, indexXIncrement = 1, indexYStart = 0, indexYIncrement = 1;
 
 function onDocLoad() {
     gameManager = new GameManager();
@@ -25,7 +29,7 @@ function onDocLoad() {
     socketManager.emit("getimages");
     socketManager.on("images", (data) => {
         gameManager.loadImages(data).then(() => {
-            imageList = new ImageList(gameManager.images, 0, 0, 40, 40, 5, 18);
+            imageList = new ImageList(gameManager.originalImages["100x50"], gameManager.images, 0, 0, 40, 40, 5, 18);
             window.requestAnimationFrame(animate);
         });
     });
@@ -45,11 +49,13 @@ function onDocLoad() {
         cvsManager.mouseScreen.y = y;
         if (cvsManager.leftMouseClicked) {
             let coords = convertCoord(cvsManager.mouseWorld.x, cvsManager.mouseWorld.y, 0, 0, tileWidth, tileHeight);
-            addIsoTileToGrid(Math.floor(coords.x), Math.floor(coords.y), lvlToAddTile);
+            let xy = xyFunction(Math.floor(coords.x), Math.floor(coords.y));
+            addIsoTileToGrid(xy.x, xy.y, lvlToAddTile);
         }
-        if(cvsManager.rightMouseClicked){
+        if (cvsManager.rightMouseClicked) {
             let coords = convertCoord(cvsManager.mouseWorld.x, cvsManager.mouseWorld.y, 0, 0, tileWidth, tileHeight);
-            removeIsoTileToGrid(Math.floor(coords.x), Math.floor(coords.y), lvlToAddTile);
+            let xy = xyFunction(Math.floor(coords.x), Math.floor(coords.y));
+            removeIsoTileToGrid(xy.x, xy.y, lvlToAddTile);
         }
     });
     cvsManager.listenFor("contextmenu", (evt) => {
@@ -59,16 +65,18 @@ function onDocLoad() {
         if (evt.button === 0) {
             cvsManager.leftMouseClicked = true;
             let coords = convertCoord(cvsManager.mouseWorld.x, cvsManager.mouseWorld.y, 0, 0, tileWidth, tileHeight);
+            let xy = xyFunction(Math.floor(coords.x), Math.floor(coords.y));
             let newImageToDraw = imageList.check(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y);
+            console.log(newImageToDraw);
             if (newImageToDraw !== "") {
                 imageToDraw = newImageToDraw;
             }
-            addIsoTileToGrid(Math.floor(coords.x), Math.floor(coords.y), lvlToAddTile);
-        }
-        else if(evt.button === 2){
+            addIsoTileToGrid(xy.x, xy.y, lvlToAddTile);
+        } else if (evt.button === 2) {
             cvsManager.rightMouseClicked = true;
             let coords = convertCoord(cvsManager.mouseWorld.x, cvsManager.mouseWorld.y, 0, 0, tileWidth, tileHeight);
-            removeIsoTileToGrid(Math.floor(coords.x), Math.floor(coords.y), lvlToAddTile);
+            let xy = xyFunction(Math.floor(coords.x), Math.floor(coords.y));
+            removeIsoTileToGrid(xy.x, xy.y, lvlToAddTile);
         }
 
     });
@@ -77,6 +85,7 @@ function onDocLoad() {
         cvsManager.rightMouseClicked = false;
     });
     gameManager.addKeyListener((evt) => {
+        console.log(evt);
         if (evt.key === "g") {
             toDrawGrid = !toDrawGrid;
         }
@@ -89,21 +98,53 @@ function onDocLoad() {
         if (evt.keyCode >= 48 && evt.keyCode <= 57) {
             lvlToAddTile = Number(evt.key)
         }
+        if (evt.key === "q") {
+            previousRotation = currentRotation;
+            if(currentRotation === 0){
+                currentRotation = 270;
+                xyFunction = getXY270;
+            }
+            else if(currentRotation === 90){
+                currentRotation = 0;
+                xyFunction = getXY0;
+            }
+            else if(currentRotation === 180){
+                currentRotation = 90;
+                xyFunction = getXY90;
+            }
+            else if(currentRotation === 270){
+                currentRotation = 180;
+                xyFunction = getXY180;
+            }
+        }
+        if (evt.key === "e") {
+            previousRotation = currentRotation;
+            if(currentRotation === 0){
+                currentRotation = 90;
+                xyFunction = getXY90;
+            }
+            else if(currentRotation === 90){
+                currentRotation = 180;
+                xyFunction = getXY180;
+            }
+            else if(currentRotation === 180){
+                currentRotation = 270;
+                xyFunction = getXY270;
+            }
+            else if(currentRotation === 270){
+                currentRotation = 0;
+                xyFunction = getXY0;
+            }
+        }
     });
     cvsManager.moveCamera(-600, -100);
+    initGridWithTiles("dirtLow");
 }
 
 function animate() {
     requestAnimationFrame(animate);
     cvsManager.clear();
-    isos.forEach((isoLvl, indexLvl) => {
-        if (displayOnlyCurrentLevel && (indexLvl !== lvlToAddTile)) return true;
-        isoLvl.forEach((isoX, indexX) => {
-            isoX.forEach((isoY, indexY) => {
-                drawIsoTileImage(isoY, indexX - indexLvl, indexY - indexLvl, 0, 0, tileWidth, tileHeight);
-            });
-        });
-    });
+    drawImagesOfGrid();
     if (toDrawGrid) {
         drawGrid(0, 0, maxX, maxY, tileWidth, tileHeight);
     }
@@ -111,8 +152,60 @@ function animate() {
     moveAroundWithCamera();
 }
 
-function addIsoTileToGrid(x, y, lvl) {
+function drawImagesOfGrid() {
+    for (let indexLvl = lvlStart; indexLvl < isos.length; indexLvl += lvlIncrement) {
+        for (let indexX = indexXStart; indexX < isos[indexLvl].length; indexX += indexXIncrement) {
+            for (let indexY = indexYStart; indexY < isos[indexLvl][indexX].length; indexY += indexYIncrement) {
+                let xy = xyFunction(indexX, indexY);
+                let imageName = isos[indexLvl][xy.x][xy.y];
+                imageName = getImageWithRotation(imageName);
+                drawIsoTileImage(imageName, indexX - indexLvl, indexY - indexLvl, 0, 0, tileWidth, tileHeight);
+            }
+        }
+    }
+}
 
+function getImageWithRotation(imageName){
+    return imageName;
+}
+
+function getXY0(x, y){
+    return {x: x, y: y};
+}
+
+function getXY90(x, y){
+    return {x: y, y: maxX - 1 -x};
+}
+
+function getXY180(x, y){
+    return {x: maxX - 1 - x, y: maxX - 1 - y}
+}
+
+function getXY270(x, y) {
+    return {x: maxX - 1 - y, y: x};
+}
+
+
+
+function initGridWithTiles(imageName) {
+    if (!isos[0]) {
+        isos[0] = [];
+    }
+    for (let localX = 0; localX < maxX; localX++) {
+        for (let localY = 0; localY < maxY; localY++) {
+            if (!isos[0][localX]) {
+                isos[0][localX] = [];
+            }
+            isos[0][localX][localY] = imageName;
+        }
+    }
+    isos[0][1][4] = "grass";
+    isos[0][2][4] = "grass";
+    isos[0][3][4] = "grass";
+}
+
+function addIsoTileToGrid(x, y, lvl) {
+    console.log(x + " " + y + " lvl" + lvl);
     if (x >= maxX || y >= maxY || x < 0 || y < 0) return;
 
     if (!isos[lvl]) {
@@ -129,9 +222,9 @@ function addIsoTileToGrid(x, y, lvl) {
     }
 }
 
-function removeIsoTileToGrid(x, y, lvl){
+function removeIsoTileToGrid(x, y, lvl) {
     if (x >= maxX || y >= maxY || x < 0 || y < 0) return;
-    if(isos[lvl] && isos[lvl][x] && isos[lvl][x][y]){
+    if (isos[lvl] && isos[lvl][x] && isos[lvl][x][y]) {
         isos[lvl][x][y] = "";
     }
 }

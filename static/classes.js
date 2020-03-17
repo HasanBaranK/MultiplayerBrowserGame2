@@ -309,9 +309,12 @@ class Bar {
 }
 
 class ImageList {
-    constructor(images, x, y, imgWidth, imgHeight, xLimit, yLimit, xOff = 0, yOff = 0) {
+    constructor(imageKeys, images, x, y, imgWidth, imgHeight, xLimit, yLimit, xOff = 0, yOff = 0) {
         this.images = images;
-        this.imagesKeys = Object.keys(this.images);
+        this.imagesKeys = [];
+        for (let i = 0; i < imageKeys.length; i++){
+            this.imagesKeys.push(imageKeys[i].split(".png")[0]);
+        }
         this.x = x;
         this.y = y;
         this.imgWidth = imgWidth;
@@ -381,6 +384,7 @@ class SocketManager {
 class GameManager {
     constructor() {
         this.images = [];
+        this.originalImages = {};
         this.keys = [];
         this.promises = [];
         this.mouseClicked = false;
@@ -397,6 +401,7 @@ class GameManager {
     }
 
     loadImages(folders) {
+        this.originalImages = folders;
         for (let folder in folders) {
             for (let image in folders[folder]) {
                 this.promises.push(new Promise((resolve, reject) => {

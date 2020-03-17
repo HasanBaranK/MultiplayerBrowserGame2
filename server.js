@@ -1,4 +1,3 @@
-
 let path = require('path');
 let socketIO = require('socket.io');
 let express = require('express');
@@ -22,8 +21,8 @@ let hitCheckFunctions = require("./server/hitCheck.js");
 let collisionFunctions = require("./server/collision.js");
 let mobFunctions = require("./server/mob.js");
 
-let gridSizeX =64;
-let gridSizeY =64;
+let gridSizeX = 64;
+let gridSizeY = 64;
 //get collisions
 let rawdata = fs.readFileSync("server/collisions.json");
 let rectangles = JSON.parse(rawdata);
@@ -36,13 +35,13 @@ let pathFindingGridSize = 32;
 //let maps = mapFunctions.generateMap(0,0,1000,1000,"Forest",gridSizeX,gridSizeY,rectangles)
 //Promise pro = new Promise(mapFunctions.mapParser("./maps/1583654261340",rectangles));
 //pro.then()
-let maps = mapFunctions.mapParser("./maps/1584234167781",rectangles);
-let map = maps.map
-let collisionMap = maps.collisionMap
-let treeMap = maps.treeMap
-let quadtree ;//= maps.quadtree
+let maps = mapFunctions.mapParser("./maps/1584234167781", rectangles);
+let map = maps.map;
+let collisionMap = maps.collisionMap;
+let treeMap = maps.treeMap;
+let quadtree;//= maps.quadtree
 
-let projectiles = []
+let projectiles = [];
 //game time
 let gameTime = 0;
 var players = {};
@@ -51,20 +50,19 @@ var vendors = {};
 var items = [];
 let playerChanged = false;
 let images = {};
-images = getImages(images)
-quadtree = collisionFunctions.initializeQuadTree(quadtree,collisionMap);
+images = getImages(images);
+quadtree = collisionFunctions.initializeQuadTree(quadtree, collisionMap);
 //console.log(quadtree)
-let matrix = mapFunctions.createGridForPathFinder(quadtree,mapSizeX,mapSizeY,pathFindingGridSize);
+let matrix = mapFunctions.createGridForPathFinder(quadtree, mapSizeX, mapSizeY, pathFindingGridSize);
 let mobs = [];
 let gridPathFinder = mobFunctions.initializePathFinder(matrix);
 for (let i = 0; i < 4; i++) {
-    let rand = Math.floor(Math.random() * 70)+1
+    let rand = Math.floor(Math.random() * 70) + 1;
     //console.log(rand)
-    let rand2 = Math.floor(Math.random() * 40)+4
+    let rand2 = Math.floor(Math.random() * 40) + 4;
     //console.log(rand2)
-    mobs.push(mobFunctions.createMob(rand*pathFindingGridSize,rand2*pathFindingGridSize,1,1,null,matrix));
+    mobs.push(mobFunctions.createMob(rand * pathFindingGridSize, rand2 * pathFindingGridSize, 1, 1, null, matrix));
 }
-
 
 
 function getImages(images) {
@@ -79,10 +77,10 @@ function getImages(images) {
     return images
 }
 
-function addVendors (name, x, y, items) {
-    vendors[name] = {name: name, x: x, y: y, items:items};
-}
 
+function addVendors(name, x, y, items) {
+    vendors[name] = {name: name, x: x, y: y, items: items};
+}
 
 
 addVendors("KFC", 150, 150, {chicken: 10});
@@ -144,12 +142,12 @@ io.on('connection', function (socket) {
         let player = players[socket.id];
         socket.join('players');
         console.log("Player joined");
-        socket.emit("joined","success");
+        socket.emit("joined", "success");
         let obj = {
             gameTime: gameTime,
             players: players,
         };
-        socket.emit("players",obj);
+        socket.emit("players", obj);
     });
     socket.on('getimages', function (click) {
         socket.emit('images', images);
@@ -158,7 +156,7 @@ io.on('connection', function (socket) {
         let rawdata = fs.readFileSync("server/collisions.json");
         let rectangles = JSON.parse(rawdata);
         rectangles[data.name] = data.rectangles;
-        let  result= JSON.stringify(rectangles);
+        let result = JSON.stringify(rectangles);
         fs.writeFileSync('server/collisions.json', result);
     });
     socket.on('getdata', function (click) {
@@ -166,10 +164,10 @@ io.on('connection', function (socket) {
             map: map,
             treeMap: treeMap,
             gameTime: gameTime,
-            collisionMap:collisionMap,
+            collisionMap: collisionMap,
             vendors: vendors,
             items: items,
-            matrix:matrix,
+            matrix: matrix,
             mobs: mobs,
         };
         socket.emit('data', gameData);
@@ -210,32 +208,32 @@ io.on('connection', function (socket) {
             gameTime: gameTime,
             players: players,
         };
-        io.emit("players",obj);
+        io.emit("players", obj);
 
     });
-    socket.on('players', function (data){
+    socket.on('players', function (data) {
         let obj = {
             gameTime: gameTime,
             players: players,
         };
-        socket.emit("players",obj);
+        socket.emit("players", obj);
     });
-    socket.on('deleteItem', function (data){
+    socket.on('deleteItem', function (data) {
         let indexToDelete = Number(data.itemIndex);
-        items.splice(indexToDelete,1);
-        io.emit("items",items);
+        items.splice(indexToDelete, 1);
+        io.emit("items", items);
     });
-    socket.on('addCoin', function (data){
-        coinsForPlayers[socket.id]+=(Number(data.amount));
-        socket.emit("coins",{amount:coinsForPlayers[socket.id]});
+    socket.on('addCoin', function (data) {
+        coinsForPlayers[socket.id] += (Number(data.amount));
+        socket.emit("coins", {amount: coinsForPlayers[socket.id]});
     });
-    socket.on('inventory', function(){
-      socket.emit("inventory", inventories[socket.id]);
+    socket.on('inventory', function () {
+        socket.emit("inventory", inventories[socket.id]);
     });
-    socket.on('message', function(data){
-       io.emit("message", {text:data.text, origin:socket.id});
+    socket.on('message', function (data) {
+        io.emit("message", {text: data.text, origin: socket.id});
     });
-    socket.on('projectile', function (projectile){
+    socket.on('projectile', function (projectile) {
 
         projectile.origin = socket.id;
         projectile.gameTimeFire = gameTime;
@@ -244,19 +242,20 @@ io.on('connection', function (socket) {
             gameTime: gameTime,
         };
         projectiles.push(projectile);
-        io.emit("projectile",obj);
+        io.emit("projectile", obj);
     });
-    socket.on('newmap', function(data){
+    socket.on('newmap', function (data) {
         fs.writeFile("./maps/" + data.name, JSON.stringify(data, null, 4), (err) => {
             if (err) {
                 console.error(err);
                 return;
-            };
+            }
+            ;
             console.log("File has been created");
         });
     });
-    socket.on('disconnect', function(evt){
-       delete players[socket.id];
+    socket.on('disconnect', function (evt) {
+        delete players[socket.id];
     });
 })
 ;
@@ -270,14 +269,15 @@ function movePlayer(player, data, speed) {
     let currentTime = Math.round(d.getTime());
     if (player.lastMoveTime + 5 < currentTime) {
         player.lastMoveTime = currentTime;
-        if(data.x){
+        if (data.x) {
             player.x = data.x;
         }
-        if(data.y){
+        if (data.y) {
             player.y = data.y;
         }
     }
 }
+
 function movePlayers(players) {
 
     let speed = 0.45//5
@@ -288,27 +288,28 @@ function movePlayers(players) {
         }
     }
 }
+
 setInterval(function () {
     //movePlayers(players)
     gameTime = timeFunctions.updateGameTime(gameTime, 1)
-    hitCheckFunctions.calculateAllProjectiles(io,projectiles,gameTime,players,quadtree,mobs,items);
+    hitCheckFunctions.calculateAllProjectiles(io, projectiles, gameTime, players, quadtree, mobs, items);
     //mobFunctions.calculateAllMobs(mobs,players,matrix,pathFindingGridSize,gridPathFinder)
     //mobFunctions.moveMobs(mobs,gridPathFinder)
-}, 1000/60);
+}, 1000 / 60);
 setInterval(function () {
     //console.time('calculation');
-    if(mobs.length <4){
+    if (mobs.length < 4) {
         for (let i = 0; i < 1; i++) {
-            let rand = Math.floor(Math.random() * 70) +1
+            let rand = Math.floor(Math.random() * 70) + 1
             //console.log(rand)
-            let rand2 = Math.floor(Math.random() * 30)+4
+            let rand2 = Math.floor(Math.random() * 30) + 4
             //console.log(rand2)
-            mobs.push(mobFunctions.createMob(rand*pathFindingGridSize,rand2*pathFindingGridSize,1,1,null,matrix));
+            mobs.push(mobFunctions.createMob(rand * pathFindingGridSize, rand2 * pathFindingGridSize, 1, 1, null, matrix));
         }
         //console.log("generatedMobs")
     }
 
-    mobFunctions.calculateAllMobs(io,mobs,players,matrix,pathFindingGridSize,gridPathFinder,projectiles,quadtree,gameTime)
+    mobFunctions.calculateAllMobs(io, mobs, players, matrix, pathFindingGridSize, gridPathFinder, projectiles, quadtree, gameTime)
     //console.timeEnd('calculation');
 
 
@@ -326,7 +327,7 @@ setInterval(function () {
     //mobFunctions.moveMobs(mobs,gridPathFinder)
 
     //console.log(mobs.length);
-    if(playerChanged) {
+    if (playerChanged) {
         let obj = {
             gameTime: gameTime,
             players: players,
