@@ -213,7 +213,12 @@ function getImageWithRotation(imageName){
         }
     }
     console.log(imageNameOnly + "_" + imageDirection);
-    return imageNameOnly + "_" + imageDirection;
+    if(gameManager.images[imageNameOnly + "_" + imageDirection]){
+        return imageNameOnly + "_" + imageDirection;
+    }
+    else{
+        return imageName;
+    }
 }
 
 function getXY0(x, y){
@@ -246,9 +251,6 @@ function initGridWithTiles(imageName) {
             isos[0][localX][localY] = imageName;
         }
     }
-    isos[0][1][4] = "grass";
-    isos[0][2][4] = "grass";
-    isos[0][3][4] = "grass";
 }
 
 function addIsoTileToGrid(x, y, lvl) {
