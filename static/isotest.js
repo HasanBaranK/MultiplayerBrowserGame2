@@ -17,7 +17,7 @@ let displayOnlyCurrentLevel = false;
 let imageToDraw = "";
 let xyFunction = getXY0;
 let currentRotation = 0;
-let previousRotation = 0;
+let rotationDirection = 0;
 let lvlStart = 0, lvlIncrement = 1, indexXStart = 0, indexXIncrement = 1, indexYStart = 0, indexYIncrement = 1;
 
 function onDocLoad() {
@@ -99,7 +99,6 @@ function onDocLoad() {
             lvlToAddTile = Number(evt.key)
         }
         if (evt.key === "q") {
-            previousRotation = currentRotation;
             if(currentRotation === 0){
                 currentRotation = 270;
                 xyFunction = getXY270;
@@ -116,9 +115,10 @@ function onDocLoad() {
                 currentRotation = 180;
                 xyFunction = getXY180;
             }
+            rotationDirection = -1;
+            rotateMapTiles();
         }
         if (evt.key === "e") {
-            previousRotation = currentRotation;
             if(currentRotation === 0){
                 currentRotation = 90;
                 xyFunction = getXY90;
@@ -135,6 +135,8 @@ function onDocLoad() {
                 currentRotation = 0;
                 xyFunction = getXY0;
             }
+            rotationDirection = 1;
+            rotateMapTiles();
         }
     });
     cvsManager.moveCamera(-600, -100);
@@ -158,15 +160,60 @@ function drawImagesOfGrid() {
             for (let indexY = indexYStart; indexY < isos[indexLvl][indexX].length; indexY += indexYIncrement) {
                 let xy = xyFunction(indexX, indexY);
                 let imageName = isos[indexLvl][xy.x][xy.y];
-                imageName = getImageWithRotation(imageName);
                 drawIsoTileImage(imageName, indexX - indexLvl, indexY - indexLvl, 0, 0, tileWidth, tileHeight);
             }
         }
     }
 }
 
+function rotateMapTiles(){
+    for (let indexLvl = lvlStart; indexLvl < isos.length; indexLvl += lvlIncrement) {
+        for (let indexX = indexXStart; indexX < isos[indexLvl].length; indexX += indexXIncrement) {
+            for (let indexY = indexYStart; indexY < isos[indexLvl][indexX].length; indexY += indexYIncrement) {
+                isos[indexLvl][indexX][indexY] = getImageWithRotation(isos[indexLvl][indexX][indexY]);
+            }
+        }
+    }
+}
+
 function getImageWithRotation(imageName){
-    return imageName;
+    let splitImage = imageName.split("_");
+    if(splitImage.length <= 1){
+        return imageName;
+    }
+    let imageNameOnly = splitImage[0];
+    let imageDirection = splitImage[1];
+
+    if(rotationDirection === 1){
+        if(imageDirection === "North"){
+            imageDirection = "East";
+        }
+        else if(imageDirection === "East"){
+            imageDirection = "South";
+        }
+        else if(imageDirection === "South"){
+            imageDirection = "West";
+        }
+        else if(imageDirection === "West"){
+            imageDirection = "North";
+        }
+    }
+    else if(rotationDirection === -1){
+        if(imageDirection === "North"){
+            imageDirection = "West";
+        }
+        else if(imageDirection === "East"){
+            imageDirection = "North";
+        }
+        else if(imageDirection === "South"){
+            imageDirection = "East";
+        }
+        else if(imageDirection === "West"){
+            imageDirection = "South";
+        }
+    }
+    console.log(imageNameOnly + "_" + imageDirection);
+    return imageNameOnly + "_" + imageDirection;
 }
 
 function getXY0(x, y){
