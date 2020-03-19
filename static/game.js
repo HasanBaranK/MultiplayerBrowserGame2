@@ -112,9 +112,8 @@ function playAudio(audioFileName,x,y,z) {
     var source = songbird.createSource();
 
     audioElementSource.connect(source.input);
-    source.setPosition(x/10, y/10, 0);
+    source.setPosition(x/20, y/20, 0);
     audioElement.play();
-
 }
 $(document).ready(init);
 let mousePosition = {};
@@ -470,7 +469,6 @@ function addCurrentAnimation(baseImageName, x, y, speed){
     }
     let newAnim = new AnimationFinalMultipleFiles(baseImageName, anim.startColumn, anim.endColumn, speed, x, y);
     newAnim.imgs = anim.imgs;
-    console.log(newAnim);
     anim.x = x;
     anim.y = y;
     currentAnimations.push(newAnim);
@@ -718,7 +716,9 @@ function cameraFollow() {
         let xDifference = (currentCoords.x  - me.x);
         let yDifference = (currentCoords.y - me.y);
         camera.move(ctx, -xDifference, -yDifference);
-        songbird.setListenerPosition(me.x/10, me.y/10, 0);
+        if(gameTime %20 == 0) {
+            songbird.setListenerPosition(me.x / 20, me.y / 20, 0);
+        }
         mouseOnX -= xDifference
         mouseOnY -= yDifference
         currentCoords.x = me.x ;
