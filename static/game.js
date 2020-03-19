@@ -117,7 +117,7 @@ function playAudio(audioFileName,x,y,z) {
 }
 $(document).ready(init);
 let mousePosition = {};
-initSoundEngine();
+
 //let audioElementSmallBomb = createAudioElement("bomb-small.mp3");
 
 /////////////////////GAME FUNCTIONS//////////////////////////////
@@ -952,6 +952,7 @@ function loadImagesThenAnimate(folders) {
     Promise.all(promises).then(() => {
         setUpAnimations();
         setUpUI();
+        initSoundEngine();
         requestId = window.requestAnimationFrame(animate);
     });
 }
