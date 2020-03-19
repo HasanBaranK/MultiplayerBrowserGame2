@@ -24,10 +24,9 @@ let mobs;
 let weaponPicked = 1;
 let mouseOnX;
 let mouseOnY;
-
+let soundOn = false;
 var audioContext;
 var songbird;
-
 let width= 5000,height= 5000;
 
 
@@ -227,6 +226,14 @@ function configure() {
         }
         else{
             uis["chatinput"].setFocus(false);
+        }
+    });
+    $("#mute").click(() => {
+        if (!soundOn) {
+            $("#mute")[0].innerText = "Mute";
+            $("#mute")[0].style.display = "none";
+            soundOn = true;
+            audioContext.resume();
         }
     });
 }
