@@ -11,7 +11,10 @@
     <script
             src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js">
     </script>
-
+    <script src="https://cdn.jsdelivr.net/npm/resonance-audio/build/resonance-audio.min.js"></script>
+    <!--<script
+            src="https://cdn.jsdelivr.net/npm/songbird-audio/build/songbird.min.js">
+    </script>-->
     <script type="module" src="classes.js"></script>
     <script type="module" src="game.js"></script>
     <script type="module" src="collision.js"></script>
@@ -25,7 +28,7 @@
             margin: 0;
             padding: 0;
         }
-        #editor{
+        #mute{
             position: absolute;
             left: 2px;
             top: 2px;
@@ -67,6 +70,7 @@
     </style>
 </head>
 <body>
+<button id="mute" class="unselectable topLayer">Unmute</button>
 <canvas id="canvas"></canvas>
 </body>
 </html>

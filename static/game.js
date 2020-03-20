@@ -24,11 +24,100 @@ let mobs;
 let weaponPicked = 1;
 let mouseOnX;
 let mouseOnY;
+let soundOn = false;
+var audioContext;
+var songbird;
+let width= 5000,height= 5000;
 
-$(document).ready(init)
-;
+
+function initSoundEngine() {
+    audioContext = new AudioContext();
+
+    // Create a (1st-order Ambisonic) Songbird scene.
+    songbird = new ResonanceAudio(audioContext);
+
+    // Send songbird's binaural output to stereo out.
+    songbird.output.connect(audioContext.destination);
+
+    // Set room acoustics properties.
+    /*var dimensions = {
+
+        width: width, height: height, depth: 1
+
+    };
+    var materials = {
+        left: 'grass', right: 'grass',
+        up: 'grass', down: 'grass',
+        front: 'grass', back: 'grass',
+    };
+    songbird.setRoomProperties(dimensions, materials);*/
+    songbird.setListenerPosition(0, 0, 0);
+}
+function createAudioElement(audioFileName) {
+    // Create an audio element. Feed into audio graph.
+    var audioElement = document.createElement('audio');
+    audioElement.src = 'sounds/'+audioFileName;
+    return audioElement;
+}
+function playAudio(audioFileName,x,y,z) {
+    /*console.log(x)
+    console.log(me.x)
+    let xdist = Math.abs(me.x - x);
+    let ydist = Math.abs(me.y - y);
+    console.log(xdist)
+    console.log(ydist)
+    if(xdist>width/2 || ydist > height/2){
+
+    }else {
+        let audioElement = createAudioElement(audioFileName);
+        // Create an AudioNode from the audio element.
+        var audioElementSource = audioContext.createMediaElementSource(audioElement);
+        var sourceOptions = {
+            position: [0, 10, 10],
+            forward: [0, 0, -1],
+            up: [0, 1, 0],
+            minDistance: 0.1,
+            maxDistance: 200,
+            rolloff: 'logarithmic',
+            gain: 0.1,
+            alpha: 0,
+            sharpness: 1,
+            sourceWidth: 0
+        }
+        var source = songbird.createSource(sourceOptions);
+
+        audioElementSource.connect(source.input);
+
+
+        if(me.x > x){
+            if(me.y > y){
+                source.setPosition(-xdist / width, ydist / height, 0);
+            }else {
+                source.setPosition(-xdist / width, -ydist / height, 0);
+            }
+        }else {
+            if(me.y > y){
+                source.setPosition(xdist / width, ydist / height, 0);
+            }else {
+                source.setPosition(xdist / width, -ydist / height, 0);
+            }
+        }
+
+        audioElement.play();
+    }*/
+    let audioElement = createAudioElement(audioFileName);
+    // Create an AudioNode from the audio element.
+    var audioElementSource = audioContext.createMediaElementSource(audioElement);
+    var source = songbird.createSource();
+
+    audioElementSource.connect(source.input);
+    source.setPosition(x/20, y/20, 0);
+    audioElement.play();
+}
+$(document).ready(init);
 let mousePosition = {};
 
+//let audioElementSmallBomb = createAudioElement("bomb-small.mp3");
 
 /////////////////////GAME FUNCTIONS//////////////////////////////
 
@@ -101,11 +190,12 @@ function init() {
 
             } else {
                 let updated = players[socket.id];
-                updated.x = me.x;
-                updated.y = me.y;
-                updated.lastMoveTime = me.lastMoveTime;
-                me = updated;
-
+                if(updated != undefined && me !== undefined && me.x !== undefined && me.y !== undefined) {
+                    updated.x = me.x;
+                    updated.y = me.y;
+                    updated.lastMoveTime = me.lastMoveTime;
+                    me = updated;
+                }
 
             }
             if(me && me.isDead){
@@ -136,6 +226,14 @@ function configure() {
         }
         else{
             uis["chatinput"].setFocus(false);
+        }
+    });
+    $("#mute").click(() => {
+        if (!soundOn) {
+            $("#mute")[0].innerText = "Mute";
+            $("#mute")[0].style.display = "none";
+            soundOn = true;
+            audioContext.resume();
         }
     });
 }
@@ -225,7 +323,7 @@ function update() {
     // ctx.lineTo(mouseOnX, mouseOnY);
     // ctx.stroke();
     // ctx.restore();
-    calculateAllProjectiles(projectiles, gameTime, quadTree, players,mobs)
+    calculateAllProjectiles(projectiles, gameTime, quadTree, players,mobs,"bomb-small.mp3")
     drawMapFront2(14, 16, 64);
 
     for (let ui in uis) {
@@ -378,7 +476,6 @@ function addCurrentAnimation(baseImageName, x, y, speed){
     }
     let newAnim = new AnimationFinalMultipleFiles(baseImageName, anim.startColumn, anim.endColumn, speed, x, y);
     newAnim.imgs = anim.imgs;
-    console.log(newAnim);
     anim.x = x;
     anim.y = y;
     currentAnimations.push(newAnim);
@@ -447,6 +544,8 @@ function doTheMovement() {
     }
     if (locationChanged) {
         lastMoveTime = (new Date()).getTime()
+        //setPositionOfEars(me.x, me.y, 0);
+
         socket.emit("movement", {
             "w": keys["w"],
             "a": keys["a"],
@@ -624,7 +723,9 @@ function cameraFollow() {
         let xDifference = (currentCoords.x  - me.x);
         let yDifference = (currentCoords.y - me.y);
         camera.move(ctx, -xDifference, -yDifference);
-
+        if(gameTime %20 == 0) {
+            songbird.setListenerPosition(me.x / 20, me.y / 20, 0);
+        }
         mouseOnX -= xDifference
         mouseOnY -= yDifference
         currentCoords.x = me.x ;
@@ -858,6 +959,7 @@ function loadImagesThenAnimate(folders) {
     Promise.all(promises).then(() => {
         setUpAnimations();
         setUpUI();
+        initSoundEngine();
         requestId = window.requestAnimationFrame(animate);
     });
 }
@@ -1013,10 +1115,13 @@ function calculateAllMobs(mobs){
     }
 }
 
+
+
 export {
     animate,
     sendProjectileServer,
     drawImageRotation,
     popUpManager,
-    addCurrentAnimation
+    addCurrentAnimation,
+    playAudio
 }
