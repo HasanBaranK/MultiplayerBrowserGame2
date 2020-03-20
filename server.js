@@ -41,6 +41,9 @@ let collisionMap = maps.collisionMap;
 let treeMap = maps.treeMap;
 let quadtree;//= maps.quadtree
 
+
+let offsets = getOffsets();
+
 let projectiles = [];
 //game time
 let gameTime = 0;
@@ -104,10 +107,10 @@ io.on('connection', function (socket) {
     console.log('Player ' + socket.id + ' has joined the game');
     socket.on('newplayer', function () {
         players[socket.id] = {
-            x: 1376,
-            histX: 1376,
-            y: 864,
-            histY: 864,
+            x: 400,
+            histX: 400,
+            y: 400,
+            histY: 400,
             delay: 0,
             histgametime: 0,
             lastgametime: 0,
@@ -159,6 +162,13 @@ io.on('connection', function (socket) {
         let result = JSON.stringify(rectangles);
         fs.writeFileSync('server/collisions.json', result);
     });
+    socket.on('updateoffsets', function (data){
+        let rawdata = fs.readFileSync("server/offsets.json");
+        let offsets = JSON.parse(rawdata);
+        offsets[data.name] = data.offsets;
+        let result = JSON.stringify(offsets);
+        fs.writeFileSync('server/offsets.json', result);
+    });
     socket.on('getdata', function (click) {
         let gameData = {
             map: map,
@@ -169,8 +179,12 @@ io.on('connection', function (socket) {
             items: items,
             matrix: matrix,
             mobs: mobs,
+            offsets: offsets
         };
         socket.emit('data', gameData);
+    });
+    socket.on('offsets', function (data) {
+        socket.emit('offsets', offsets);
     });
     socket.on('movement', function (data) {
         let player = players[socket.id] || {};
@@ -259,6 +273,12 @@ io.on('connection', function (socket) {
     });
 })
 ;
+
+function getOffsets(){
+    let rawdata = fs.readFileSync("server/offsets.json");
+    let offsets = JSON.parse(rawdata);
+    return offsets;
+}
 
 function movePlayer(player, data, speed) {
     if (data == null) {
