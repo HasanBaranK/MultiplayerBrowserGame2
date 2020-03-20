@@ -640,6 +640,7 @@ class IsoGrid {
             for (let gridX = 0; gridX < this.maxX; gridX++) {
                 for (let gridY = 0; gridY < this.maxY; gridY++) {
                     if (this.grid[gridLvl] && this.grid[gridLvl][gridY] && this.grid[gridLvl][gridX][gridY]) {
+                        console.log(rotationDirection);
                         this.grid[gridLvl][gridX][gridY] = this.adjustImageForRotation(this.grid[gridLvl][gridX][gridY], rotationDirection);
                     }
                 }
@@ -653,7 +654,7 @@ class IsoGrid {
         let imageNameOnly = splitImage[0];
         let imageDirection = splitImage[1];
         if (imageDirection !== "N" && imageDirection !== "E" && imageDirection !== "S" && imageDirection !== "W") return imgName;
-
+        console.log(rotationDirection);
         if (rotationDirection === 1) {
             if (imageDirection === "N") {
                 imageDirection = "E";

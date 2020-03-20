@@ -40,6 +40,12 @@ function init() {
         if (evt.key === "g") {
             isoGrid.showGrid = !isoGrid.showGrid;
         }
+        if(evt.key === "q"){
+            isoGrid.rotate(-1);
+        }
+        if(evt.key === "e"){
+            isoGrid.rotate(1)
+        }
     });
     cvsManager.listenFor("mousemove", (evt) => {
         let x = evt.offsetX || evt.layerX;

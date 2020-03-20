@@ -93,7 +93,7 @@ function onDocLoad() {
     gameManager.addKeyListener((evt) => {
         if(evt.key === "p"){
             console.log(isos);
-            socketManager.emit("isomap", {name: chatInput.text, map: isos});
+            socketManager.emit("isomap", {name: "map", map: isos});
         }
         if (evt.key === "g") {
             toDrawGrid = !toDrawGrid;
