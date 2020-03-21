@@ -20,55 +20,9 @@
             margin: 0;
             padding: 0;
         }
-        #editor{
-            position: absolute;
-            left: 2px;
-            top: 2px;
-        }
-        #mapeditor{
-            position: absolute;
-            left: 200px;
-            top: 2px;
-        }
-        #add{
-            position: absolute;
-            left: 60px;
-            top: 2px;
-            display: none;
-        }
-        #imagename{
-            position: absolute;
-            left: 2px;
-            top: 30px;
-            display: none;
-        }
-        #select{
-            position: absolute;
-            left: 200px;
-            top: 30px;
-            display: none;
-        }
-        .unselectable{
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            -khtml-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-        }
-        .topLayer{
-            z-index: 100;
-        }
     </style>
 </head>
 <body>
-<button id="editor" class="unselectable topLayer">Collision Editor</button>
-<button id="mapeditor" class="unselectable topLayer">Map Editor</button>
-<button id="add" class="unselectable topLayer">Add Rectangle</button>
-<button id="select" class="unselectable topLayer">Select</button>
-<input type="text" id="imagename" placeholder="Image Name" class="unselectable topLayer">
 <canvas id="canvas"></canvas>
-<canvas id="mapeditorcanvas"></canvas>
-<canvas id="actualmapcanvas"></canvas>
 </body>
 </html>

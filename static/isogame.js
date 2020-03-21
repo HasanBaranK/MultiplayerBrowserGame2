@@ -57,7 +57,6 @@ function init() {
     });
     cvsManager.listenFor("mousedown", (evt) => {
         let iso = isoGrid.twoDToIso(cvsManager.mouseWorld.x, cvsManager.mouseWorld.y);
-        console.log(iso.gridX * isoGrid.tw + " " + iso.gridY * isoGrid.th);
     });
     isoGrid.fillLevelWithTile(0, "block_East");
 }

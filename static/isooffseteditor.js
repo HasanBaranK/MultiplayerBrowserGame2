@@ -10,7 +10,7 @@ let imageList;
 let imageToDraw = "";
 let xOffset = 0;
 let yOffset = 0;
-let delayOfOffsetMoving = 50;
+let delayOfOffsetMoving = 10;
 let checkTime = Date.now();
 
 function onDocLoad() {

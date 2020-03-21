@@ -314,6 +314,7 @@ class ImageList {
         this.xOff = xOff;
         this.yOff = yOff;
         this.startIndex = 0;
+        this.selectedImage = "";
     }
 
     draw(_ctx, _camera) {
@@ -342,8 +343,9 @@ class ImageList {
     check(x, y) {
         let xIndex = Math.floor(x / (this.imgWidth + this.xOff));
         let yIndex = Math.floor(y / (this.imgHeight + this.yOff));
-        if (xIndex > this.xLimit || yIndex > this.yLimit) return "";
-        return (this.imagesKeys[xIndex + yIndex * this.xLimit + this.startIndex])
+        if (xIndex <= this.xLimit && yIndex <= this.yLimit) {
+            this.selectedImage = this.imagesKeys[xIndex + yIndex * this.xLimit + this.startIndex];
+        }
     }
 
     scroll(dir) {
@@ -557,16 +559,16 @@ class IsoGrid {
         return {gridX: gridX, gridY: gridY};
     }
 
-    addTile(x, y, lvl = this.currentLevel) {
+    addTile(lvl, x, y, imageName) {
         let coords = this.twoDToIso(x, y);
-        let gridCoords = this.rotateFunction(Math.floor(coords.x), Math.floor(coords.y));
-        this.addTileGivenGrid(gridCoords.gridX, gridCoords.gridY, lvl);
+        let gridCoords = this.rotateFunction(Math.floor(coords.gridX), Math.floor(coords.gridY));
+        this.addTileGivenGrid(lvl, gridCoords.gridX, gridCoords.gridY, imageName);
     }
 
-    removeTile(x, y, lvl = this.currentLevel) {
+    removeTile(lvl, x, y) {
         let coords = this.twoDToIso(x, y);
-        let gridCoords = this.rotateFunction(Math.floor(coords.x), Math.floor(coords.y));
-        this.removeTileGivenGrid(gridCoords.gridX, gridCoords.gridY, lvl);
+        let gridCoords = this.rotateFunction(Math.floor(coords.gridX), Math.floor(coords.gridY));
+        this.removeTileGivenGrid(lvl, gridCoords.gridX, gridCoords.gridY);
     }
 
     addTileGivenGrid(lvl, gridX, gridY, imgName) {
@@ -639,8 +641,7 @@ class IsoGrid {
         for (let gridLvl = 0; gridLvl < Object.keys(this.grid).length; gridLvl++) {
             for (let gridX = 0; gridX < this.maxX; gridX++) {
                 for (let gridY = 0; gridY < this.maxY; gridY++) {
-                    if (this.grid[gridLvl] && this.grid[gridLvl][gridY] && this.grid[gridLvl][gridX][gridY]) {
-                        console.log(rotationDirection);
+                    if (this.grid[gridLvl] && this.grid[gridLvl][gridX] && this.grid[gridLvl][gridX][gridY]) {
                         this.grid[gridLvl][gridX][gridY] = this.adjustImageForRotation(this.grid[gridLvl][gridX][gridY], rotationDirection);
                     }
                 }
@@ -654,7 +655,6 @@ class IsoGrid {
         let imageNameOnly = splitImage[0];
         let imageDirection = splitImage[1];
         if (imageDirection !== "N" && imageDirection !== "E" && imageDirection !== "S" && imageDirection !== "W") return imgName;
-        console.log(rotationDirection);
         if (rotationDirection === 1) {
             if (imageDirection === "N") {
                 imageDirection = "E";
@@ -720,6 +720,30 @@ class IsoGrid {
 
 }
 
+class Button {
+    constructor(image, x, y, width = image.width, height = image.height) {
+        this.image = image;
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.callBacks = [];
+    }
+    addCallbackWhenClicked(callback){
+        this.callBacks.push(callback);
+    }
+    check(x, y){
+        if(x >= this.x && x <= this.x + this.width && y >= this.y && y <= this.y + this.height){
+            this.callBacks.forEach((callback) => {
+               callback();
+            });
+        }
+    }
+    draw(_ctx, _camera){
+        _ctx.drawImage(this.image, this.x + _camera.x, this.y + _camera.y, this.width, this.height);
+    }
+}
+
 export {
     Camera,
     Inventory,
@@ -734,5 +758,6 @@ export {
     GameManager,
     SocketManager,
     ChatInput,
-    IsoGrid
+    IsoGrid,
+    Button
 }
