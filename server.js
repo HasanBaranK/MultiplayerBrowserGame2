@@ -264,31 +264,35 @@ io.on('connection', function (socket) {
     });
     socket.on('deleteisomap', function (data) {
         let isomaps = {};
-        fs.readdir("./isomaps", (err, files) => {
-            files.forEach(folder => {
-                isomaps[folder] = true;
+        if(files) {
+            fs.readdir("./isomaps", (err, files) => {
+                files.forEach(folder => {
+                    isomaps[folder] = true;
+                });
+                if (isomaps[data.name]) {
+                    fs.unlinkSync('./isomaps/' + data.name);
+                    io.emit('deleteisomap', {});
+                }
             });
-            if (isomaps[data.name]) {
-                fs.unlinkSync('./isomaps/'+data.name);
-                io.emit('deleteisomap', {});
-            }
-        });
+        }
     });
     socket.on('sendisomap', function (data) {
         let isomaps = {};
         fs.readdir("./isomaps", (err, files) => {
-            files.forEach(folder => {
-                isomaps[folder] = true;
-            });
-            if (isomaps[data.name]) {
-                data.name = Date.now();
+            if(files) {
+                files.forEach(folder => {
+                    isomaps[folder] = true;
+                });
+                if (isomaps[data.name]) {
+                    data.name = Date.now();
+                }
+                let json = JSON.stringify(data);
+                fs.writeFile("./isomaps/" + data.name, json, function (err) {
+                    if (err) throw err;
+                    console.log('Saved!');
+                });
+                io.emit('sendisomap', {});
             }
-            let json = JSON.stringify(data);
-            fs.writeFile("./isomaps/" + data.name, json, function (err) {
-                if (err) throw err;
-                console.log('Saved!');
-            });
-            io.emit('sendisomap', {});
         });
     });
     socket.on('projectile', function (projectile) {
