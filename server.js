@@ -249,6 +249,7 @@ io.on('connection', function (socket) {
     });
     socket.on('getisomaplist', function () {
         let isomaps = [];
+        if(fs.readdirSync("./isomaps").length === 0) return;
         fs.readdir("./isomaps", (err, files) => {
             files.forEach(folder => {
                 isomaps.push(folder);
@@ -257,23 +258,26 @@ io.on('connection', function (socket) {
         });
     });
     socket.on('getisomap', function (data) {
+        if(fs.readdirSync("./isomaps").length === 0) return;
         let raw = fs.readFileSync("./isomaps/" + data.name, 'utf8');
         socket.emit("getisomap", JSON.parse(raw));
     });
     socket.on('deleteisomap', function (data) {
         let isomaps = {};
+        if(fs.readdirSync("./isomaps").length === 0) return;
         fs.readdir("./isomaps", (err, files) => {
             files.forEach(folder => {
                 isomaps[folder] = true;
             });
             if (isomaps[data.name]) {
                 fs.unlinkSync('./isomaps/'+data.name);
-                socket.emit('deleteisomap', {});
+                io.emit('deleteisomap', {});
             }
         });
     });
     socket.on('sendisomap', function (data) {
         let isomaps = {};
+        if(fs.readdirSync("./isomaps").length === 0) return;
         fs.readdir("./isomaps", (err, files) => {
             files.forEach(folder => {
                 isomaps[folder] = true;
@@ -286,7 +290,7 @@ io.on('connection', function (socket) {
                 if (err) throw err;
                 console.log('Saved!');
             });
-            socket.emit('sendisomap', {});
+            io.emit('sendisomap', {});
         });
     });
     socket.on('projectile', function (projectile) {
