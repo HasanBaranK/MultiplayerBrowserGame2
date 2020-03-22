@@ -268,7 +268,7 @@ io.on('connection', function (socket) {
             });
             if (isomaps[data.name]) {
                 fs.unlinkSync('./isomaps/'+data.name);
-                socket.emit('deleteisomap', {});
+                io.emit('deleteisomap', {});
             }
         });
     });
@@ -286,7 +286,7 @@ io.on('connection', function (socket) {
                 if (err) throw err;
                 console.log('Saved!');
             });
-            socket.emit('sendisomap', {});
+            io.emit('sendisomap', {});
         });
     });
     socket.on('projectile', function (projectile) {
