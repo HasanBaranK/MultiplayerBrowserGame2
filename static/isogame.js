@@ -58,7 +58,7 @@ function init() {
     cvsManager.listenFor("mousedown", (evt) => {
         let iso = isoGrid.twoDToIso(cvsManager.mouseWorld.x, cvsManager.mouseWorld.y);
     });
-    isoGrid.fillLevelWithTile(0, "block_East");
+    isoGrid.fillLevelWithTile(0, "block_E");
 }
 
 function setUpPlayerAnimations(player) {

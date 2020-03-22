@@ -6,6 +6,7 @@ let socketManager;
 $(document).ready(onDocLoad);
 let imageList;
 let isoGrid;
+let tempTile;
 
 function onDocLoad() {
     gameManager = new GameManager();
@@ -40,9 +41,10 @@ function onDocLoad() {
         cvsManager.mouseScreen.x = x;
         cvsManager.mouseScreen.y = y;
         if (cvsManager.leftMouseClicked) {
-            isoGrid.addTile(isoGrid.currentLevel, cvsManager.mouseWorld.x, cvsManager.mouseWorld.y, imageList.selectedImage);
-        }
-        if (cvsManager.rightMouseClicked) {
+            if (!imageList.check(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)) {
+                isoGrid.addTile(isoGrid.currentLevel, cvsManager.mouseWorld.x, cvsManager.mouseWorld.y, imageList.selectedImage);
+            }
+        } else if (cvsManager.rightMouseClicked) {
             isoGrid.removeTile(isoGrid.currentLevel, cvsManager.mouseWorld.x, cvsManager.mouseWorld.y);
         }
     });
@@ -52,13 +54,13 @@ function onDocLoad() {
     cvsManager.listenFor("mousedown", (evt) => {
         if (evt.button === 0) {
             cvsManager.leftMouseClicked = true;
-            imageList.check(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y);
-            isoGrid.addTile(isoGrid.currentLevel, cvsManager.mouseWorld.x, cvsManager.mouseWorld.y, imageList.selectedImage);
+            if (!imageList.check(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)) {
+                isoGrid.addTile(isoGrid.currentLevel, cvsManager.mouseWorld.x, cvsManager.mouseWorld.y, imageList.selectedImage);
+            }
         } else if (evt.button === 2) {
             cvsManager.rightMouseClicked = true;
             isoGrid.removeTile(isoGrid.currentLevel, cvsManager.mouseWorld.x, cvsManager.mouseWorld.y);
         }
-
     });
     cvsManager.listenFor("mouseup", (evt) => {
         cvsManager.leftMouseClicked = false;
@@ -80,9 +82,19 @@ function onDocLoad() {
         if (evt.key === "e") {
             isoGrid.rotate(1);
         }
+        if (evt.key === "r") {
+            imageList.rotateSelectedImage(1);
+        }
     });
     cvsManager.moveCamera(-600, -100);
-    isoGrid.fillLevelWithTile(0, "block_East")
+    isoGrid.fillLevelWithTile(0, "block_E");
+    setInterval(selectedImage, 50);
+}
+
+function selectedImage() {
+    if (imageList) {
+        isoGrid.setTempTile(isoGrid.currentLevel, cvsManager.mouseWorld.x, cvsManager.mouseWorld.y, imageList.selectedImage);
+    }
 }
 
 function animate() {
@@ -93,7 +105,6 @@ function animate() {
     moveAroundWithCamera(10);
     requestAnimationFrame(animate);
 }
-
 
 function moveAroundWithCamera(speed = 2) {
     if (gameManager.keys["w"]) {

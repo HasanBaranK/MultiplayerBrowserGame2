@@ -340,12 +340,46 @@ class ImageList {
         }
     }
 
+    rotateSelectedImage(rotationDirection){
+        let splitImage = this.selectedImage.split("_");
+        if (splitImage.length <= 1) return;
+        let imageNameOnly = splitImage[0];
+        let imageDirection = splitImage[1];
+        if (imageDirection !== "N" && imageDirection !== "E" && imageDirection !== "S" && imageDirection !== "W") return;
+        if (rotationDirection === 1) {
+            if (imageDirection === "N") {
+                imageDirection = "E";
+            } else if (imageDirection === "E") {
+                imageDirection = "S";
+            } else if (imageDirection === "S") {
+                imageDirection = "W";
+            } else if (imageDirection === "W") {
+                imageDirection = "N";
+            }
+        } else if (rotationDirection === -1) {
+            if (imageDirection === "N") {
+                imageDirection = "W";
+            } else if (imageDirection === "E") {
+                imageDirection = "N";
+            } else if (imageDirection === "S") {
+                imageDirection = "E";
+            } else if (imageDirection === "W") {
+                imageDirection = "S";
+            }
+        }
+        if (this.images[imageNameOnly + "_" + imageDirection]) {
+            this.selectedImage = imageNameOnly + "_" + imageDirection;
+        }
+    }
+
     check(x, y) {
         let xIndex = Math.floor(x / (this.imgWidth + this.xOff));
         let yIndex = Math.floor(y / (this.imgHeight + this.yOff));
         if (xIndex <= this.xLimit && yIndex <= this.yLimit) {
             this.selectedImage = this.imagesKeys[xIndex + yIndex * this.xLimit + this.startIndex];
+            return true;
         }
+        return false;
     }
 
     scroll(dir) {
@@ -385,6 +419,7 @@ class Player {
         this.data = data;
         this.animations = [];
     }
+
     move(x, y) {
         this.oldX = this.x;
         this.oldY = this.y;
@@ -429,11 +464,11 @@ class GameManager {
         this.players = {};
     }
 
-    getPlayer(id = this.socketManager.socket.id){
+    getPlayer(id = this.socketManager.socket.id) {
         return this.players[id];
     }
 
-    addPlayer(player){
+    addPlayer(player) {
         this.players[player.name] = player;
     }
 
@@ -488,7 +523,7 @@ class CanvasManager {
             this.cvs.style.border = 'solid black 1px';
         }
         this.cvs.style.position = "absolute";
-        this.currentCoords = {x: this.cvs.width/2, y: this.cvs.height/2}
+        this.currentCoords = {x: this.cvs.width / 2, y: this.cvs.height / 2}
     }
 
     moveCamera(x, y) {
@@ -521,9 +556,10 @@ class IsoGrid {
         this.currentLevel = 0;
         this.currentRotation = 0;
         this.showGrid = false;
+        this.tempTile = undefined;
     }
 
-    fillLevelWithTile(lvl, imgName){
+    fillLevelWithTile(lvl, imgName) {
         if (!this.grid[lvl]) {
             this.grid[lvl] = {};
         }
@@ -559,19 +595,45 @@ class IsoGrid {
         return {gridX: gridX, gridY: gridY};
     }
 
+    twoDToIsoFloored(x, y) {
+        let iso = this.twoDToIso(x, y);
+        return {gridX: Math.floor(iso.gridX), gridY: Math.floor(iso.gridY)};
+    }
+
+    setTempTile(lvl, x, y, imageName) {
+        if (imageName === "") return;
+        let coords = this.twoDToIsoFloored(x, y);
+        let rotatedCoords = this.rotateFunction(coords.x, coords.y);
+        if (coords.gridX >= this.maxX || coords.gridY >= this.maxY || coords.gridX < 0 || coords.gridY < 0) return;
+        if (!this.grid[lvl]) {
+            this.grid[lvl] = {};
+        }
+        if (!this.grid[lvl][rotatedCoords.gridX]) {
+            this.grid[lvl][rotatedCoords.gridX] = {};
+        }
+        if (this.grid[lvl][rotatedCoords.gridX][rotatedCoords.gridY]) return;
+        this.tempTile = {lvl: lvl, gridX: coords.gridX, gridY: coords.gridY, imageName: imageName};
+    }
+
+    unsetTempTile() {
+        this.tempTile = undefined;
+    }
+
     addTile(lvl, x, y, imageName) {
-        let coords = this.twoDToIso(x, y);
-        let gridCoords = this.rotateFunction(Math.floor(coords.gridX), Math.floor(coords.gridY));
+        if (imageName === "") return;
+        let coords = this.twoDToIsoFloored(x, y);
+        let gridCoords = this.rotateFunction(coords.gridX, coords.gridY);
         this.addTileGivenGrid(lvl, gridCoords.gridX, gridCoords.gridY, imageName);
     }
 
     removeTile(lvl, x, y) {
-        let coords = this.twoDToIso(x, y);
-        let gridCoords = this.rotateFunction(Math.floor(coords.gridX), Math.floor(coords.gridY));
+        let coords = this.twoDToIsoFloored(x, y);
+        let gridCoords = this.rotateFunction(coords.gridX, coords.gridY);
         this.removeTileGivenGrid(lvl, gridCoords.gridX, gridCoords.gridY);
     }
 
-    addTileGivenGrid(lvl, gridX, gridY, imgName) {
+    addTileGivenGrid(lvl, gridX, gridY, imageName) {
+        if (imageName === "") return;
         if (gridX >= this.maxX || gridY >= this.maxY || gridX < 0 || gridY < 0) return;
         if (!this.grid[lvl]) {
             this.grid[lvl] = {};
@@ -580,7 +642,7 @@ class IsoGrid {
             this.grid[lvl][gridX] = {};
         }
         if (!this.grid[lvl][gridX][gridY]) {
-            this.grid[lvl][gridX][gridY] = imgName;
+            this.grid[lvl][gridX][gridY] = imageName;
         }
     }
 
@@ -592,11 +654,11 @@ class IsoGrid {
     }
 
     drawGridOutline() {
-        if(!this.showGrid) return;
+        if (!this.showGrid) return;
         for (let gridX = 0; gridX < this.maxX; gridX++) {
             for (let gridY = 0; gridY < this.maxY; gridY++) {
-                let x = this.originX + (gridX - gridY) * this.tw/2;
-                let y = this.originY + (gridX + gridY) * this.th/2;
+                let x = this.originX + (gridX - gridY) * this.tw / 2;
+                let y = this.originY + (gridX + gridY) * this.th / 2;
                 this.drawTileOutline(x, y);
             }
         }
@@ -605,10 +667,13 @@ class IsoGrid {
     drawImagesOfGrid() {
         for (let gridX = 0; gridX < this.maxX; gridX++) {
             for (let gridY = 0; gridY < this.maxY; gridY++) {
-                for (let gridLvl = 0; gridLvl < Object.keys(this.grid).length; gridLvl++) {
+                for (let lvl = 0; lvl < Object.keys(this.grid).length; lvl++) {
                     let gridCoords = this.rotateFunction(gridX, gridY);
-                    if (this.grid[gridLvl] && this.grid[gridLvl][gridCoords.gridX] && this.grid[gridLvl][gridCoords.gridX][gridCoords.gridY]) {
-                        this.drawTileImage(gridLvl, gridX, gridY, this.grid[gridLvl][gridCoords.gridX][gridCoords.gridY]);
+                    if (this.grid[lvl] && this.grid[lvl][gridCoords.gridX] && this.grid[lvl][gridCoords.gridX][gridCoords.gridY]) {
+                        this.drawTileImage(lvl, gridX, gridY, this.grid[lvl][gridCoords.gridX][gridCoords.gridY]);
+                    }
+                    else if (this.tempTile && this.tempTile.gridX === gridX && this.tempTile.gridY === gridY && this.tempTile.lvl === lvl) {
+                        this.drawTileImage(lvl, gridX, gridY, this.tempTile.imageName);
                     }
                 }
             }
@@ -729,17 +794,20 @@ class Button {
         this.height = height;
         this.callBacks = [];
     }
-    addCallbackWhenClicked(callback){
+
+    addCallbackWhenClicked(callback) {
         this.callBacks.push(callback);
     }
-    check(x, y){
-        if(x >= this.x && x <= this.x + this.width && y >= this.y && y <= this.y + this.height){
+
+    check(x, y) {
+        if (x >= this.x && x <= this.x + this.width && y >= this.y && y <= this.y + this.height) {
             this.callBacks.forEach((callback) => {
-               callback();
+                callback();
             });
         }
     }
-    draw(_ctx, _camera){
+
+    draw(_ctx, _camera) {
         _ctx.drawImage(this.image, this.x + _camera.x, this.y + _camera.y, this.width, this.height);
     }
 }
