@@ -250,10 +250,12 @@ io.on('connection', function (socket) {
     socket.on('getisomaplist', function () {
         let isomaps = [];
         fs.readdir("./isomaps", (err, files) => {
-            files.forEach(folder => {
-                isomaps.push(folder);
-            });
-            socket.emit('getisomaplist', isomaps);
+            if(files){
+                files.forEach(folder => {
+                    isomaps.push(folder);
+                });
+                socket.emit('getisomaplist', isomaps);
+            }
         });
     });
     socket.on('getisomap', function (data) {
