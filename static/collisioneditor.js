@@ -50,8 +50,8 @@ class Rectangle {
 }
 
 /////////////////////INITIALIZATION CODE//////////////////////////
-import {CanvasManager, GameManager, SocketManager, ImageList, Button} from "./classes.js";
-
+import {CanvasManager, GameManager, SocketManager} from "./classes.js";
+import {Button, ImageList} from "./uiclasses";
 let cvsManager;
 let gameManager;
 let socketManager;
