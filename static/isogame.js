@@ -74,6 +74,11 @@ function setUpPlayerAnimations(player) {
     player.addAnimation("idle", gameManager.images["idle"], 0, 7, 4, 32, 32, 32, 32, 120);
 }
 
+function setUpBull(player){
+  let speed = 50;
+  player.addAnimation("idle", gameManager.images["bull"], 0, 6, 0, 32, 32, 32, 32, speed);
+}
+
 function animate() {
     requestAnimationFrame(animate);
     cvsManager.clear();
@@ -111,6 +116,10 @@ function determineAnimationForPlayer(player) {
     } else {
         player.draw(cvsManager.ctx, "idle");
     }
+}
+
+function determineAnimationForBull(player){
+  player.draw(cvsManager.ctx, "idle");
 }
 
 function move(speed) {

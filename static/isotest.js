@@ -10,7 +10,8 @@ import {
   Button
 } from "./uiclasses.js";
 import {
-  TextList
+  TextList,
+  Label
 } from "./uiclasses.js";
 
 let gameManager;
@@ -25,6 +26,16 @@ let loadMapButton;
 let deleteMapButton;
 let textList;
 let isoOffsetEditor;
+let maxXLabel;
+let maxYLabel;
+let maxXInput;
+let maxYInput;
+let xAxisRectangleLabel;
+let xAxisRectangleInput;
+let yAxisRectangleLabel;
+let yAxisRectangleInput;
+let currentInput;
+let generateMapButton;
 
 function onDocLoad() {
   gameManager = new GameManager();
@@ -42,9 +53,25 @@ function onDocLoad() {
       loadMapButton = new Button(gameManager.images["download"], sendMapButton.x + sendMapButton.width + 10, 10, 20, 20);
       deleteMapButton = new Button(gameManager.images["delete"], loadMapButton.x + loadMapButton.width + 10, 10, 20, 20);
       isoOffsetEditor = new Button(gameManager.images["edit"], deleteMapButton.x + deleteMapButton.width + 10, 10, 20, 20);
+      maxXLabel = new Label(isoOffsetEditor.x + isoOffsetEditor.width + 10, 10 + 16, "MaxX:");
+      maxXInput = new ChatInput(maxXLabel.getWidth(cvsManager) + maxXLabel.x + 10, 10, 50, 20);
+      maxYLabel = new Label(maxXInput.x + maxXInput.width + 10, 10 + 16, "MaxY:");
+      maxYInput = new ChatInput(maxYLabel.getWidth(cvsManager) + maxYLabel.x + 10, 10, 50, 20);
+      xAxisRectangleLabel = new Label(maxYInput.x + maxYInput.width + 10, 10 + 16, "xAxisRectangle:");
+      xAxisRectangleInput = new ChatInput(xAxisRectangleLabel.getWidth(cvsManager) + xAxisRectangleLabel.x + 10, 10, 50, 20);
+      yAxisRectangleLabel = new Label(xAxisRectangleInput.x + xAxisRectangleInput.width + 10, 10 + 16, "yAxisRectangle:");
+      yAxisRectangleInput = new ChatInput(yAxisRectangleLabel.getWidth(cvsManager) + yAxisRectangleLabel.x + 10, 10, 50, 20);
+      generateMapButton = new Button(gameManager.images["hammer"], yAxisRectangleInput.x + yAxisRectangleInput.width + 10, 10, 20, 20);
+      currentInput = chatInput;
       sendMapButton.addCallbackWhenClicked(uploadMap);
       loadMapButton.addCallbackWhenClicked(loadMap);
       deleteMapButton.addCallbackWhenClicked(deleteMap);
+      generateMapButton.addCallbackWhenClicked(()=>{
+        isoGrid.maxX = Number(maxXInput.text);
+        isoGrid.maxY = Number(maxYInput.text);
+        isoGrid.eraseGrid();
+        isoGrid.fillRectangle(0,Number(xAxisRectangleInput.text), Number(yAxisRectangleInput.text), "block_E");
+      })
       isoOffsetEditor.addCallbackWhenClicked(() => {
         window.location.href = "http://localhost:5000/isooffseteditor.html";
       });
@@ -107,12 +134,27 @@ function onDocLoad() {
       if (!imageList.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)) {
         isoGrid.addTile(isoGrid.currentLevel, cvsManager.mouseWorld.x, cvsManager.mouseWorld.y, imageList.selectedImage);
       }
-      chatInput.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y);
+      if(chatInput.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)){
+        currentInput = chatInput;
+      }
+      if(maxXInput.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)){
+        currentInput = maxXInput;
+      }
+      if(maxYInput.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)){
+        currentInput = maxYInput;
+      }
+      if(xAxisRectangleInput.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)){
+        currentInput = xAxisRectangleInput;
+      }
+      if(yAxisRectangleInput.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)){
+        currentInput = yAxisRectangleInput;
+      }
       deleteMapButton.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y);
       sendMapButton.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y);
       loadMapButton.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y);
       textList.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y);
       isoOffsetEditor.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y);
+      generateMapButton.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y);
     } else if (evt.button === 2) {
       cvsManager.rightMouseClicked = true;
       isoGrid.removeTile(isoGrid.currentLevel, cvsManager.mouseWorld.x, cvsManager.mouseWorld.y);
@@ -123,8 +165,8 @@ function onDocLoad() {
     cvsManager.rightMouseClicked = false;
   });
   gameManager.addKeyListener((evt) => {
-    if (chatInput.focus && ((evt.keyCode >= 65 && evt.keyCode <= 90) || evt.keyCode === 32 || evt.keyCode === 191 || (evt.keyCode >= 48 && evt.keyCode <= 57))) {
-      chatInput.addText(evt.key, cvsManager);
+    if (currentInput.focus && ((evt.keyCode >= 65 && evt.keyCode <= 90) || evt.keyCode === 32 || evt.keyCode === 191 || (evt.keyCode >= 48 && evt.keyCode <= 57))) {
+      currentInput.addText(evt.key, cvsManager);
       return;
     }
     if (evt.key === "g") {
@@ -145,15 +187,14 @@ function onDocLoad() {
       imageList.rotateSelectedImage(1);
     }
     if (evt.key === "Escape") {
-      chatInput.setFocus(false);
+      currentInput.setFocus(false);
     }
     if (evt.key === "Backspace") {
-      chatInput.removeText(cvsManager);
+      currentInput.removeText(cvsManager);
     }
     if (evt.key === "Enter") {
-      uploadMap();
-      chatInput.setText("");
-      chatInput.setFocus(false);
+      //currentInput.setText("");
+      currentInput.setFocus(false);
     }
   });
   isoGrid.fillRectangle(0, 5, isoGrid.maxY, "block_E");
@@ -179,6 +220,15 @@ function animate() {
   loadMapButton.draw(cvsManager);
   deleteMapButton.draw(cvsManager);
   isoOffsetEditor.draw(cvsManager);
+  maxXLabel.draw(cvsManager);
+  maxXInput.draw(cvsManager);
+  maxYLabel.draw(cvsManager);
+  maxYInput.draw(cvsManager);
+  xAxisRectangleLabel.draw(cvsManager);
+  xAxisRectangleInput.draw(cvsManager);
+  yAxisRectangleLabel.draw(cvsManager);
+  yAxisRectangleInput.draw(cvsManager);
+  generateMapButton.draw(cvsManager);
   cvsManager.ctx.beginPath();
   cvsManager.ctx.arc(cvsManager.camera.x + cvsManager.cvs.width / 2, cvsManager.camera.y + cvsManager.cvs.height / 2, 2, 0, 2 * Math.PI);
   cvsManager.ctx.fill();
@@ -240,7 +290,7 @@ function rotateCamera(direction) {
 
 function moveAroundWithCamera(speed = 2) {
 
-  if (chatInput.focus) return;
+  if (currentInput.focus) return;
 
   if (gameManager.keys["w"]) {
     cvsManager.moveCamera(0, -speed);

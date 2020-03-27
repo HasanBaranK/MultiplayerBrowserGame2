@@ -23,7 +23,7 @@ class ChatInput {
     cvsManager.ctx.fillStyle = "rgba(255,0,0,1)";
     cvsManager.ctx.fillStyle = "rgba(0,0,0,1)";
     cvsManager.ctx.font = "16px ariel";
-    cvsManager.ctx.fillText(this.textToShow, cvsManager.camera.x + this.x, cvsManager.camera.y + this.y + 20);
+    cvsManager.ctx.fillText(this.textToShow, cvsManager.camera.x + this.x, cvsManager.camera.y + this.y + 15);
     if (this.focus) {
       if (this.blinkOn) {
         cvsManager.ctx.fillStyle = "rgb(10,8,6)";
@@ -103,6 +103,25 @@ class ChatInput {
 
   getHeight() {
     return this.height;
+  }
+}
+
+class Label {
+  constructor(x, y, text){
+    this.x = x;
+    this.y = y;
+    this.text = text;
+  }
+
+  draw(cvsManager){
+    cvsManager.ctx.font = "16px Ariel";
+    cvsManager.ctx.fillText(this.text, this.x + cvsManager.camera.x, this.y + cvsManager.camera.y);
+  }
+
+  getWidth(cvsManager){
+    cvsManager.ctx.font = "16px ariel";
+    let cal = cvsManager.ctx.measureText(this.text);
+    return cal.width;
   }
 }
 
@@ -449,5 +468,6 @@ export {
   ImageList,
   PopUpManager,
   TextList,
-  Inventory
+  Inventory,
+  Label
 }
