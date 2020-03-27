@@ -79,10 +79,10 @@ function onDocLoad() {
         let maxY = Number(maxYInput.text);
         let tw = Number(tileWidthInput.text);
         let th = Number(tileHeightInput.text);
-        if (maxX !== NaN) isoGrid.maxX = maxX;
-        if (maxY !== NaN) isoGrid.maxY = maxY;
-        if (tw !== NaN) isoGrid.tw = tw;
-        if (th !== NaN) isoGrid.th = th;
+        if (maxX !== NaN && maxX !== 0) isoGrid.maxX = maxX;
+        if (maxY !== NaN && maxY !== 0) isoGrid.maxY = maxY;
+        if (tw !== NaN && tw !== 0) isoGrid.tw = tw;
+        if (th !== NaN && th !== 0) isoGrid.th = th;
         isoGrid.eraseGrid();
         isoGrid.fillRectangle(0, Number(xAxisRectangleInput.text), Number(yAxisRectangleInput.text), "block_E");
       })
