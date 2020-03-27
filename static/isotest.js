@@ -34,6 +34,10 @@ let xAxisRectangleLabel;
 let xAxisRectangleInput;
 let yAxisRectangleLabel;
 let yAxisRectangleInput;
+let tileWidthInput;
+let tileHeightInput;
+let tileWidthLabel;
+let tileHeightLabel
 let currentInput;
 let generateMapButton;
 
@@ -61,16 +65,26 @@ function onDocLoad() {
       xAxisRectangleInput = new ChatInput(xAxisRectangleLabel.getWidth(cvsManager) + xAxisRectangleLabel.x + 10, 10, 50, 20);
       yAxisRectangleLabel = new Label(xAxisRectangleInput.x + xAxisRectangleInput.width + 10, 10 + 16, "yAxisRectangle:");
       yAxisRectangleInput = new ChatInput(yAxisRectangleLabel.getWidth(cvsManager) + yAxisRectangleLabel.x + 10, 10, 50, 20);
-      generateMapButton = new Button(gameManager.images["hammer"], yAxisRectangleInput.x + yAxisRectangleInput.width + 10, 10, 20, 20);
+      tileWidthLabel = new Label(yAxisRectangleInput.x + yAxisRectangleInput.width + 10, 10 + 16, "tile width:");
+      tileWidthInput = new ChatInput(tileWidthLabel.getWidth(cvsManager) + tileWidthLabel.x + 10, 10, 50, 20);
+      tileHeightLabel = new Label(tileWidthInput.x + tileWidthInput.width + 10, 10 + 16, "tile height:");
+      tileHeightInput = new ChatInput(tileHeightLabel.getWidth(cvsManager) + tileHeightLabel.x + 10, 10, 50, 20);
+      generateMapButton = new Button(gameManager.images["hammer"], tileHeightInput.x + tileHeightInput.width + 10, 10, 20, 20);
       currentInput = chatInput;
       sendMapButton.addCallbackWhenClicked(uploadMap);
       loadMapButton.addCallbackWhenClicked(loadMap);
       deleteMapButton.addCallbackWhenClicked(deleteMap);
-      generateMapButton.addCallbackWhenClicked(()=>{
-        isoGrid.maxX = Number(maxXInput.text);
-        isoGrid.maxY = Number(maxYInput.text);
+      generateMapButton.addCallbackWhenClicked(() => {
+        let maxX = Number(maxXInput.text);
+        let maxY = Number(maxYInput.text);
+        let tw = Number(tileWidthInput.text);
+        let th = Number(tileHeightInput.text);
+        if (maxX !== NaN) isoGrid.maxX = maxX;
+        if (maxY !== NaN) isoGrid.maxY = maxY;
+        if (tw !== NaN) isoGrid.tw = tw;
+        if (th !== NaN) isoGrid.th = th;
         isoGrid.eraseGrid();
-        isoGrid.fillRectangle(0,Number(xAxisRectangleInput.text), Number(yAxisRectangleInput.text), "block_E");
+        isoGrid.fillRectangle(0, Number(xAxisRectangleInput.text), Number(yAxisRectangleInput.text), "block_E");
       })
       isoOffsetEditor.addCallbackWhenClicked(() => {
         window.location.href = "http://localhost:5000/isooffseteditor.html";
@@ -134,20 +148,26 @@ function onDocLoad() {
       if (!imageList.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)) {
         isoGrid.addTile(isoGrid.currentLevel, cvsManager.mouseWorld.x, cvsManager.mouseWorld.y, imageList.selectedImage);
       }
-      if(chatInput.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)){
+      if (chatInput.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)) {
         currentInput = chatInput;
       }
-      if(maxXInput.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)){
+      if (maxXInput.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)) {
         currentInput = maxXInput;
       }
-      if(maxYInput.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)){
+      if (maxYInput.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)) {
         currentInput = maxYInput;
       }
-      if(xAxisRectangleInput.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)){
+      if (xAxisRectangleInput.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)) {
         currentInput = xAxisRectangleInput;
       }
-      if(yAxisRectangleInput.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)){
+      if (yAxisRectangleInput.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)) {
         currentInput = yAxisRectangleInput;
+      }
+      if (tileWidthInput.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)) {
+        currentInput = tileWidthInput;
+      }
+      if (tileHeightInput.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)) {
+        currentInput = tileHeightInput;
       }
       deleteMapButton.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y);
       sendMapButton.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y);
@@ -228,6 +248,10 @@ function animate() {
   xAxisRectangleInput.draw(cvsManager);
   yAxisRectangleLabel.draw(cvsManager);
   yAxisRectangleInput.draw(cvsManager);
+  tileWidthInput.draw(cvsManager);
+  tileWidthLabel.draw(cvsManager);
+  tileHeightInput.draw(cvsManager);
+  tileHeightLabel.draw(cvsManager);
   generateMapButton.draw(cvsManager);
   cvsManager.ctx.beginPath();
   cvsManager.ctx.arc(cvsManager.camera.x + cvsManager.cvs.width / 2, cvsManager.camera.y + cvsManager.cvs.height / 2, 2, 0, 2 * Math.PI);
