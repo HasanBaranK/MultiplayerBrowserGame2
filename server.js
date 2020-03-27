@@ -257,9 +257,16 @@ io.on('connection', function (socket) {
         });
     });
     socket.on('getisomap', function (data) {
-        if(fs.readdirSync("./isomaps").length === 0) return;
-        let raw = fs.readFileSync("./isomaps/" + data.name, 'utf8');
-        socket.emit("getisomap", JSON.parse(raw));
+        let isomaps = {};
+        fs.readdir("./isomaps", (err, files) => {
+            files.forEach(folder => {
+                isomaps[folder] = true;
+            });
+            if (isomaps[data.name]) {
+                let raw = fs.readFileSync("./isomaps/" + data.name, 'utf8');
+                socket.emit("getisomap", JSON.parse(raw));
+            }
+        });
     });
     socket.on('deleteisomap', function (data) {
         let isomaps = {};
@@ -273,8 +280,21 @@ io.on('connection', function (socket) {
             }
         });
     });
+    socket.on("updateoffsetsfolder", function (data) {
+        let rawdata = fs.readFileSync("server/offsets.json");
+        let offsets = JSON.parse(rawdata);
+        fs.readdir(imageFolder + "/" + data.name, (err, files) => {
+            files.forEach(folder => {
+                folder = folder.split(".")[0];
+                offsets[folder] = data.offsets;
+            });
+            let result = JSON.stringify(offsets);
+            fs.writeFileSync('server/offsets.json', result);
+        });
+    });
     socket.on('sendisomap', function (data) {
         let isomaps = {};
+        if(data.name.trim() === "") return;
         fs.readdir("./isomaps", (err, files) => {
             files.forEach(folder => {
                 isomaps[folder] = true;

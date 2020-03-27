@@ -3,14 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Unknown</title>
-    <script
-            src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
-            integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8="
-            crossorigin="anonymous">
-    </script>
-    <script
-            src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js">
-    </script>
+    <script src="socket.io-client/dist/socket.io.slim.js"></script>
+    <script src="jquery/dist/jquery.slim.js"></script>
     <script type="module" src="mapeditor.js"></script>
     <script type="module" src="classes.js"></script>
     <style>
@@ -69,7 +63,7 @@
 <button id="select" class="unselectable topLayer">Select</button>
 <input type="text" id="imagename" placeholder="Image Name" class="unselectable topLayer">
 <canvas id="canvas"></canvas>
-<canvas style="bor" id="mapeditorcanvas"></canvas>
+<canvas id="mapeditorcanvas"></canvas>
 <canvas id="actualmapcanvas"></canvas>
 </body>
 </html>

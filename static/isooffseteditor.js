@@ -1,29 +1,42 @@
-import {CanvasManager, GameManager, SocketManager, ImageList} from "./classes.js";
+import {CanvasManager, GameManager, SocketManager} from "./classes.js";
+import {ImageList} from "./uiclasses.js";
+import {IsoGrid} from "./classes.js";
 
 let gameManager;
 let cvsManager;
 let socketManager;
+let isoGrid;
 $(document).ready(onDocLoad);
 let tileWidth = 256;
 let tileHeight = tileWidth / 2;
 let imageList;
-let imageToDraw = "";
 let xOffset = 0;
 let yOffset = 0;
 let delayOfOffsetMoving = 10;
 let checkTime = Date.now();
+let zOffSetMode = false;
+let defaultOffset = {x: 0, y: 0, z: 0};
+let defaultMode = false;
+let folder = 'sand';
 
 function onDocLoad() {
-    gameManager = new GameManager();
     socketManager = new SocketManager();
     cvsManager = new CanvasManager($("#canvas")[0]);
+    gameManager = new GameManager(cvsManager, socketManager);
+    gameManager.data.offsets = {};
     cvsManager.configure(window.innerWidth, window.innerHeight, 0, false, true, true);
+    isoGrid = new IsoGrid(cvsManager.cvs.width / 2, cvsManager.cvs.height / 2, 256, 128, 1, 1, cvsManager, gameManager);
+    isoGrid.showGrid = true;
     socketManager.connect();
     socketManager.emit("getimages");
+    socketManager.on("offsets", (data) => {
+        gameManager.data.offsets = data;
+        window.requestAnimationFrame(animate);
+    });
     socketManager.on("images", (data) => {
         gameManager.loadImages(data).then(() => {
-            imageList = new ImageList(gameManager.originalImages["sand"], gameManager.images, 0, 0, 40, 40, 5, 18);
-            window.requestAnimationFrame(animate);
+            imageList = new ImageList(gameManager.originalImages[folder], gameManager.images, 0, 0, 40, 40, 5, 18);
+            socketManager.emit("offsets");
         });
     });
     cvsManager.listenFor("wheel", (evt) => {
@@ -42,14 +55,28 @@ function onDocLoad() {
         cvsManager.mouseScreen.y = y;
     });
     cvsManager.listenFor("contextmenu", (evt) => {
-        event.preventDefault();
+        evt.preventDefault();
     });
     cvsManager.listenFor("mousedown", (evt) => {
         if (evt.button === 0) {
             cvsManager.leftMouseClicked = true;
-            let imageToChecked = imageList.check(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y);
-            if(imageToChecked){
-                imageToDraw = imageList.check(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y);
+            if (imageList.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)) {
+                isoGrid.removeTileGivenGrid(0, 0, 0, imageList.selectedImage);
+                isoGrid.addTileGivenGrid(0, 0, 0, imageList.selectedImage);
+                if (!gameManager.data.offsets[imageList.selectedImage]) {
+                    gameManager.data.offsets[imageList.selectedImage] = {
+                        x: defaultOffset.x,
+                        y: defaultOffset.y,
+                        z: defaultOffset.z
+                    };
+                    console.log(gameManager.data.offsets[imageList.selectedImage]);
+                }
+                if (zOffSetMode) {
+                    isoGrid.removeTileGivenGrid(1, 0, 0, imageList.selectedImage);
+                    isoGrid.addTileGivenGrid(1, 0, 0, imageList.selectedImage);
+                } else {
+                    isoGrid.removeTileGivenGrid(1, 0, 0, imageList.selectedImage);
+                }
             }
         } else if (evt.button === 2) {
             cvsManager.rightMouseClicked = true;
@@ -60,9 +87,33 @@ function onDocLoad() {
         cvsManager.leftMouseClicked = false;
         cvsManager.rightMouseClicked = false;
     });
-    gameManager.addKeyListener((evt)=>{
-        if(evt.key === "p"){
-            socketManager.emit("updateoffsets", {name: imageToDraw, offsets: {x:xOffset, y:yOffset}});
+    gameManager.addKeyListener((evt) => {
+        if (evt.key === "p") {
+            socketManager.emit("updateoffsets", {
+                name: imageList.selectedImage,
+                offsets: gameManager.data.offsets[imageList.selectedImage]
+            });
+        }
+        if (evt.key === "m") {
+            console.log(gameManager.data.offsets[imageList.selectedImage]);
+            socketManager.emit("updateoffsetsfolder", {
+                name: folder,
+                offsets: gameManager.data.offsets[imageList.selectedImage]
+            })
+        }
+        if (evt.key === "z") {
+            zOffSetMode = !zOffSetMode;
+            if (zOffSetMode) {
+                isoGrid.addTileGivenGrid(1, 0, 0, imageList.selectedImage);
+            } else {
+                isoGrid.removeTileGivenGrid(1, 0, 0, imageList.selectedImage);
+            }
+        }
+        if (evt.key === "g") {
+            isoGrid.showGrid = !isoGrid.showGrid;
+        }
+        if (evt.key === "u") {
+            defaultMode = !defaultMode;
         }
     });
     cvsManager.moveCamera(0, 0);
@@ -72,15 +123,20 @@ function animate() {
     requestAnimationFrame(animate);
     let currentTime = Date.now();
     cvsManager.clear();
-    if(gameManager.images[imageToDraw]){
-        cvsManager.ctx.drawImage(gameManager.images[imageToDraw], cvsManager.cvs.width / 2 + xOffset, cvsManager.cvs.height/2 + yOffset);
-    }
+    isoGrid.drawImagesOfGrid();
+    isoGrid.drawGridOutline();
     cvsManager.ctx.font = "24px ariel";
-    cvsManager.ctx.fillText(xOffset + " " + yOffset, cvsManager.camera.x + cvsManager.cvs.width/2, cvsManager.camera.y + 100);
-    strokeIsoTile(cvsManager.cvs.width / 2, cvsManager.cvs.height/2, tileWidth, tileHeight);
-    imageList.draw(cvsManager.ctx, cvsManager.camera);
-    moveAroundWithCamera(1);
-    if(currentTime - checkTime >= delayOfOffsetMoving){
+    if (defaultMode) {
+        cvsManager.ctx.fillStyle = "rgb(255,0,20)";
+    } else {
+        cvsManager.ctx.fillStyle = "rgb(0,0,0)";
+    }
+    if (imageList.selectedImage !== "") {
+        cvsManager.ctx.fillText(gameManager.data.offsets[imageList.selectedImage].x + " " + gameManager.data.offsets[imageList.selectedImage].y + " " + gameManager.data.offsets[imageList.selectedImage].z, cvsManager.camera.x + cvsManager.cvs.width / 2, cvsManager.camera.y + 100);
+    }
+    imageList.draw(cvsManager);
+    moveAroundWithCamera(2);
+    if (currentTime - checkTime >= delayOfOffsetMoving) {
         moveImage();
         checkTime = currentTime + delayOfOffsetMoving;
     }
@@ -112,26 +168,38 @@ function moveAroundWithCamera(speed = 2) {
     }
 }
 
-function adjustDelayOfOffset(){
-    if(gameManager.keys["t"]){
-        delayOfOffsetMoving--;
+function adjustDelayOfOffset() {
+    if (gameManager.keys["t"]) {
+        delayOfOffsetMoving -= 5;
     }
-    if(gameManager.keys["y"]){
-        delayOfOffsetMoving++;
+    if (gameManager.keys["y"]) {
+        delayOfOffsetMoving += 5;
     }
 }
 
-function moveImage(){
-    if(gameManager.keys["ArrowLeft"]){
-        xOffset--;
+function moveImage() {
+    if (gameManager.keys["ArrowLeft"]) {
+        gameManager.data.offsets[imageList.selectedImage].x--;
     }
-    if(gameManager.keys["ArrowRight"]){
-        xOffset++;
+    if (gameManager.keys["ArrowRight"]) {
+        gameManager.data.offsets[imageList.selectedImage].x++;
     }
-    if(gameManager.keys["ArrowDown"]){
-        yOffset++;
+    if (gameManager.keys["ArrowDown"]) {
+        if (zOffSetMode) {
+            gameManager.data.offsets[imageList.selectedImage].z++;
+        } else {
+            gameManager.data.offsets[imageList.selectedImage].y++;
+        }
     }
-    if(gameManager.keys["ArrowUp"]){
-        yOffset--;
+    if (gameManager.keys["ArrowUp"]) {
+        if (zOffSetMode) {
+            gameManager.data.offsets[imageList.selectedImage].z--;
+        } else {
+            gameManager.data.offsets[imageList.selectedImage].y--;
+        }
+    }
+    if (defaultMode) {
+        let a = gameManager.data.offsets[imageList.selectedImage];
+        defaultOffset = {x: a.x, y: a.y, z: a.z};
     }
 }
