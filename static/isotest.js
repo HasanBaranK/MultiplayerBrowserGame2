@@ -51,7 +51,7 @@ function onDocLoad() {
   socketManager.emit("getimages");
   socketManager.on("images", (data) => {
     gameManager.loadImages(data).then(() => {
-      imageList = new ImageList(gameManager.originalImages["sand"], gameManager.images, 0, 0, 40, 40, 5, 18);
+      imageList = new ImageList(gameManager.originalImages["renders"], gameManager.images, 0, 0, 40, 40, 5, 18);
       chatInput = new ChatInput(imageList.getWidth() + imageList.x + 10, 10, 200, 20);
       sendMapButton = new Button(gameManager.images["upload2"], chatInput.getWidth() + chatInput.x + 10, 10, 20, 20);
       loadMapButton = new Button(gameManager.images["download"], sendMapButton.x + sendMapButton.width + 10, 10, 20, 20);
@@ -70,6 +70,7 @@ function onDocLoad() {
       tileHeightLabel = new Label(tileWidthInput.x + tileWidthInput.width + 10, 10 + 16, "tile height:");
       tileHeightInput = new ChatInput(tileHeightLabel.getWidth(cvsManager) + tileHeightLabel.x + 10, 10, 50, 20);
       generateMapButton = new Button(gameManager.images["hammer"], tileHeightInput.x + tileHeightInput.width + 10, 10, 20, 20);
+      textList = new TextList(imageList.getWidth() + imageList.x + 10, chatInput.getHeight() + chatInput.y + 10, 150, 200);
       currentInput = chatInput;
       sendMapButton.addCallbackWhenClicked(uploadMap);
       loadMapButton.addCallbackWhenClicked(loadMap);
@@ -84,14 +85,13 @@ function onDocLoad() {
         if (tw !== NaN && tw !== 0) isoGrid.tw = tw;
         if (th !== NaN && th !== 0) isoGrid.th = th;
         isoGrid.eraseGrid();
-        isoGrid.fillRectangle(0, Number(xAxisRectangleInput.text), Number(yAxisRectangleInput.text), "block_E");
+        isoGrid.fillRectangle(0, Number(xAxisRectangleInput.text), Number(yAxisRectangleInput.text), "1233");
       })
       isoOffsetEditor.addCallbackWhenClicked(() => {
         window.location.href = "http://localhost:5000/isooffseteditor.html";
       });
       socketManager.emit("offsets");
       socketManager.emit("getisomaplist");
-      textList = new TextList(imageList.getWidth() + imageList.x + 10, chatInput.getHeight() + chatInput.y + 10, 150, 200);
     });
   });
   socketManager.on("offsets", (data) => {
@@ -128,6 +128,7 @@ function onDocLoad() {
     cvsManager.mouseScreen.y = y;
     if (cvsManager.leftMouseClicked) {
       if (!imageList.checkClick(cvsManager.mouseScreen.x, cvsManager.mouseScreen.y)) {
+        console.log(imageList.selectedImage);
         isoGrid.addTile(isoGrid.currentLevel, cvsManager.mouseWorld.x, cvsManager.mouseWorld.y, imageList.selectedImage);
       }
     } else if (cvsManager.rightMouseClicked) {
@@ -217,7 +218,7 @@ function onDocLoad() {
       currentInput.setFocus(false);
     }
   });
-  isoGrid.fillRectangle(0, 5, isoGrid.maxY, "block_E");
+  isoGrid.fillRectangle(0, 5, isoGrid.maxY, "1233");
   cvsManager.camera.set(cvsManager.ctx, isoGrid.originX, isoGrid.originY);
   console.log(cvsManager.camera);
   setInterval(selectedImage, 50);

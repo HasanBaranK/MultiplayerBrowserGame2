@@ -17,7 +17,8 @@ let checkTime = Date.now();
 let zOffSetMode = false;
 let defaultOffset = {x: 0, y: 0, z: 0};
 let defaultMode = false;
-let folder = 'sand';
+let defaultModeImage = "";
+let folder = 'renders';
 
 function onDocLoad() {
     socketManager = new SocketManager();
@@ -114,6 +115,9 @@ function onDocLoad() {
         }
         if (evt.key === "u") {
             defaultMode = !defaultMode;
+            if(defaultMode){
+              defaultModeImage = imageList.selectedImage;
+            }
         }
     });
     cvsManager.moveCamera(0, 0);
@@ -198,7 +202,8 @@ function moveImage() {
             gameManager.data.offsets[imageList.selectedImage].y--;
         }
     }
-    if (defaultMode) {
+    if (defaultMode && imageList.selectedImage === defaultModeImage) {
+        console.log(defaultOffset);
         let a = gameManager.data.offsets[imageList.selectedImage];
         defaultOffset = {x: a.x, y: a.y, z: a.z};
     }

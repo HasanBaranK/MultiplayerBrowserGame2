@@ -315,6 +315,7 @@ function setUpAnimations() {
   createAnimationFinalFiles("expl_09", 32, 1, 15);
   createAnimationFinalFiles("expl_10", 32, 1, 15);
   createAnimationFinalFiles("expl_11", 24, 1, 15);
+  createAnimationFinalFiles("tmp", 20, 0, 50);
 }
 
 function setUpUI() {
@@ -588,6 +589,10 @@ function doTheMovement() {
     weaponPicked = 2;
     console.log(weaponPicked)
   }
+  if(keys["3"]){
+    weaponPicked = 3;
+    console.log(weaponPicked);
+  }
   if (locationChanged) {
     lastMoveTime = (new Date()).getTime()
     //setPositionOfEars(me.x, me.y, 0);
@@ -787,6 +792,9 @@ function printMousePos(event) {
     } else if (weaponPicked === 2) {
       createProjectile(projectiles, "arrow3", me.x, me.y, me.x, me.y, mouseOnX, mouseOnY, 15, quadTree, players, gameTime, 24, 8, true, 100, 50, 10)
     }
+    else if (weaponPicked === 3) {
+
+    }
   }
 }
 
@@ -977,7 +985,7 @@ $(window).keydown((key) => {
     gameState.inInventory = !gameState.inInventory;
     socket.emit("inventory", );
     //addCurrentAnimation("expl_01", me.x, me.y)
-    addCurrentAnimation("expl_08", me.x, me.y)
+    addCurrentAnimation("tmp", me.x - 600, me.y - 400)
   }
   if (keyPressed === "q") {
     inStatsScreen = !inStatsScreen;

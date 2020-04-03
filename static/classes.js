@@ -383,10 +383,13 @@ class IsoGrid {
     };
   }
 
-  isoToTwoD(gridX, gridY){
-    let x = this.th*(gridX*2 - gridY*2)/2
-    let y = this.th*(gridX + gridY)/2
-    return {x:x + this.originX, y:y + this.originY};
+  isoToTwoD(gridX, gridY) {
+    let x = this.th * (gridX * 2 - gridY * 2) / 2
+    let y = this.th * (gridX + gridY) / 2
+    return {
+      x: x + this.originX,
+      y: y + this.originY
+    };
   }
 
   twoDToIso(x, y) {
@@ -590,7 +593,7 @@ class IsoGrid {
     if (direction === -1) {
       if (this.currentRotation === 0) {
         newRotation = 270;
-        newRotationFunction= this.rotate270;
+        newRotationFunction = this.rotate270;
       } else if (this.currentRotation === 90) {
         newRotation = 0;
         newRotationFunction = this.rotate0;
@@ -601,8 +604,7 @@ class IsoGrid {
         newRotation = 180;
         newRotationFunction = this.rotate180;
       }
-    }
-    else if (direction === 1) {
+    } else if (direction === 1) {
       if (this.currentRotation === 0) {
         newRotation = 90;
         newRotationFunction = this.rotate90;
@@ -615,11 +617,31 @@ class IsoGrid {
       } else if (this.currentRotation === 270) {
         newRotation = 0;
         newRotationFunction = this.rotate0;
+        newRotation;
       }
     }
-    return {rotation: newRotation, rotationFunction: newRotationFunction};
+    return {
+      rotation: newRotation,
+      rotationFunction: newRotationFunction
+    };
   }
 
+}
+
+class IsoGridDynamic {
+
+  constructor(srcGrid, cvsManager, gameManager, length, realWidth) {
+    this.srcGrid = srcGrid;
+    this.destGrid = new IsoGrid(srcGrid.originX, srcGrid.originY, srcGrid.tw, srcGrid.th, length, length, cvsManager, gameManager);
+    console.log(srcGrid);
+    this.currentXAxis = 0;
+    this.currentYAxis = 0;
+    this.realWidth = realWidth;
+  }
+
+  replace(direction){
+
+  }
 }
 
 export {
@@ -631,5 +653,6 @@ export {
   CanvasManager,
   GameManager,
   SocketManager,
-  IsoGrid
+  IsoGrid,
+  IsoGridDynamic
 }
